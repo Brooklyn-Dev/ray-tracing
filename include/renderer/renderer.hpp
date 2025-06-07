@@ -26,6 +26,7 @@ private:
 
 	std::vector<Sphere> m_spheres;
 	GLuint m_sphereSSBO = 0;
+	GLint m_uLocNumSpheres;
 
 	void setupShaders();
 	void setupQuad();

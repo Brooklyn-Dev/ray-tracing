@@ -5,8 +5,8 @@
 #include "utils\io.hpp"
 
 // === CONSTANTS ===
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 600;
+const int WINDOW_WIDTH = 1200;
+const int WINDOW_HEIGHT = 900;
 const float MOUSE_SENSITIVITY = 0.3f;
 const float CAMERA_SPEED = 5.0f;
 
@@ -99,6 +99,9 @@ int main() {
     // Create renderer
     Renderer renderer(WINDOW_WIDTH, WINDOW_HEIGHT);
 
+    double lastTime = glfwGetTime();
+    int frames = 0;
+
     // Main loop
     while (!glfwWindowShouldClose(window)) {
         // Calculate delta time
@@ -111,6 +114,14 @@ int main() {
 
         // Render
         renderer.render(g_camera);
+
+        frames++;
+        double currentTime = glfwGetTime();
+        if (currentTime - lastTime >= 1.0) { // Every second
+            std::cout << "FPS: " << frames << std::endl;
+            frames = 0;
+            lastTime = currentTime;
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();

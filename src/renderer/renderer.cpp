@@ -14,8 +14,6 @@ Renderer::Renderer(int width, int height)
 	setupShaders();
 	setupQuad();
     setupSpheres();
-
-    m_uLocResolution = glGetUniformLocation(m_shaderProgram, "uResolution");
 }
 
 Renderer::~Renderer() {
@@ -29,20 +27,24 @@ void Renderer::setupShaders() {
     }
 
     // Cache uniform locations
+    m_uLocResolution = glGetUniformLocation(m_shaderProgram, "uResolution");
+
     m_uLocCameraPos = glGetUniformLocation(m_shaderProgram, "uCameraPosition");
     m_uLocCameraForward = glGetUniformLocation(m_shaderProgram, "uCameraForward");
     m_uLocCameraRight = glGetUniformLocation(m_shaderProgram, "uCameraRight");
     m_uLocCameraUp = glGetUniformLocation(m_shaderProgram, "uCameraUp");
+
+    m_uLocNumSpheres = glGetUniformLocation(m_shaderProgram, "uNumSpheres");
 }
 
 void Renderer::setupQuad() {
     // Fullscreen quad vertices
     float vertices[] = {
         // x, y, u, v
-        -1.0f, -1.0f, 1.0f, 0.0f,  // Bottom-left
-        1.0f, -1.0f, 0.0f, 0.0f,  // Bottom-right
-        -1.0f, 1.0f, 1.0f, 1.0f,  // Top-left
-        1.0f, 1.0f, 0.0f, 1.0f  // Top-right
+        -1.0f, -1.0f, 0.0f, 0.0f,  // Bottom-left
+        1.0f, -1.0f, 1.0f, 0.0f,   // Bottom-right
+        -1.0f, 1.0f, 0.0f, 1.0f,   // Top-left
+        1.0f, 1.0f, 1.0f, 1.0f     // Top-right
     };
 
     glGenVertexArrays(1, &m_VAO);
@@ -80,29 +82,43 @@ void Renderer::setupSpheres() {
         sphere.position = glm::vec3(startX + i * spacing, 0.0f, -3.0f);
         sphere.radius = baseRadius + i * radiusIncrement;
         sphere.material.colour = colours[i];
-        sphere.material.emission = glm::vec3(0.0f);
+        sphere.material.emissionColour = glm::vec3(0.0f);
+        sphere.material.emissionStrength = 0.0f;
         m_spheres.push_back(sphere);
     }
 
-    // Light
-    Sphere sphere;
-    sphere.position = glm::vec3(0.0f, 4.0f, -10.0f);
-    sphere.radius = 2.0f;
-    sphere.material.colour = glm::vec3(1.0f);
-    sphere.material.emission = glm::vec3(1.0f);
-    m_spheres.push_back(sphere);
-}
+    // "Ground"
+    Sphere sphereGround;
+    sphereGround.position = glm::vec3(0.0f, -20.5f, 0.0f);
+    sphereGround.radius = 20.0f;
+    sphereGround.material.colour = glm::vec3(1.0f);
+    sphereGround.material.emissionColour = glm::vec3(0.0f);
+    sphereGround.material.emissionStrength = 0.0f;
+    m_spheres.push_back(sphereGround);
 
-void Renderer::uploadSpheres(const std::vector<Sphere>& spheres) {
+    // Light
+    Sphere sphereLight;
+    sphereLight.position = glm::vec3(0.0f, 4.0f, -25.0f);
+    sphereLight.radius = 10.0f;
+    sphereLight.material.colour = glm::vec3(1.0f);
+    sphereLight.material.emissionColour = glm::vec3(1.0f);
+    sphereLight.material.emissionStrength = 10.0f;
+    m_spheres.push_back(sphereLight);
+
+    // Initialise sphere buffer
     if (m_sphereSSBO == 0)
         glGenBuffers(1, &m_sphereSSBO);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_sphereSSBO);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, spheres.size() * sizeof(Sphere), spheres.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, m_spheres.size() * sizeof(Sphere), nullptr, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_sphereSSBO);  // binding = 0
+}
 
-    GLint uLocNumSpheres = glGetUniformLocation(m_shaderProgram, "uNumSpheres");
-    glUniform1i(uLocNumSpheres, (GLint)spheres.size());
+void Renderer::uploadSpheres(const std::vector<Sphere>& spheres) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_sphereSSBO);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, spheres.size() * sizeof(Sphere), spheres.data());
+
+    glUniform1i(m_uLocNumSpheres, (GLint)spheres.size());
 }
 
 void Renderer::render(const Camera& camera) {
