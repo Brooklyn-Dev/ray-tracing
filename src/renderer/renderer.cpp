@@ -9,11 +9,13 @@
 #include "utils/io.hpp"
 #include "utils/shader.hpp"
 
-Renderer::Renderer(int width, int height)
+Renderer::Renderer(uint32_t width, uint32_t height)
 	: m_width(width), m_height(height) {
 	setupShaders();
 	setupQuad();
     setupSpheres();
+
+    createFramebuffer(width, height);
 }
 
 Renderer::~Renderer() {
@@ -33,6 +35,9 @@ void Renderer::setupShaders() {
     m_uLocCameraForward = glGetUniformLocation(m_shaderProgram, "uCameraForward");
     m_uLocCameraRight = glGetUniformLocation(m_shaderProgram, "uCameraRight");
     m_uLocCameraUp = glGetUniformLocation(m_shaderProgram, "uCameraUp");
+
+    m_uLocMaxBounces = glGetUniformLocation(m_shaderProgram, "uMaxBounces");
+    m_uLocSamples = glGetUniformLocation(m_shaderProgram, "uSamples");
 
     m_uLocNumSpheres = glGetUniformLocation(m_shaderProgram, "uNumSpheres");
 }
@@ -89,16 +94,16 @@ void Renderer::setupSpheres() {
 
     // "Ground"
     Sphere sphereGround;
-    sphereGround.position = glm::vec3(0.0f, -20.5f, 0.0f);
+    sphereGround.position = glm::vec3(0.0f, -20.5f, -1.0f);
     sphereGround.radius = 20.0f;
-    sphereGround.material.colour = glm::vec3(1.0f);
+    sphereGround.material.colour = glm::vec3(0.3f, 0.0f, 0.7f);
     sphereGround.material.emissionColour = glm::vec3(0.0f);
     sphereGround.material.emissionStrength = 0.0f;
     m_spheres.push_back(sphereGround);
 
     // Light
     Sphere sphereLight;
-    sphereLight.position = glm::vec3(0.0f, 4.0f, -25.0f);
+    sphereLight.position = glm::vec3(0.0f, 5.0f, -22.0f);
     sphereLight.radius = 10.0f;
     sphereLight.material.colour = glm::vec3(1.0f);
     sphereLight.material.emissionColour = glm::vec3(1.0f);
@@ -121,7 +126,66 @@ void Renderer::uploadSpheres(const std::vector<Sphere>& spheres) {
     glUniform1i(m_uLocNumSpheres, (GLint)spheres.size());
 }
 
+void Renderer::createFramebuffer(uint32_t width, uint32_t height) {
+    if (m_framebuffer != 0) {
+        glDeleteFramebuffers(1, &m_framebuffer);
+        glDeleteTextures(1, &m_colourTexture);
+    }
+
+    glGenFramebuffers(1, &m_framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+
+    // Create colour texture
+    glGenTextures(1, &m_colourTexture);
+    glBindTexture(GL_TEXTURE_2D, m_colourTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Attach texture to framebuffer
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colourTexture, 0);
+
+    // Create and attach depth buffer
+    GLuint depthBuffer;
+    glGenRenderbuffers(1, &depthBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+    glDeleteRenderbuffers(1, &depthBuffer);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cerr << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::onResize(uint32_t width, uint32_t height) {
+    if (width == 0 || height == 0 || (width == m_width && height == m_height))
+        return;
+
+    m_width = width;
+    m_height = height;
+
+    createFramebuffer(m_width, m_height);
+}
+
+void Renderer::setMaxBounces(uint32_t bounces) {
+    m_maxBounces = bounces;
+}
+
+void Renderer::setSamples(uint32_t samples) {
+    m_samples = samples;
+}
+
+GLuint Renderer::getColourTexture() const {
+    return m_colourTexture;
+}
+
 void Renderer::render(const Camera& camera) {
+    glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+    glViewport(0, 0, m_width, m_height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     if (m_shaderProgram == 0) return;
 
     glClear(GL_COLOR_BUFFER_BIT);
@@ -132,18 +196,33 @@ void Renderer::render(const Camera& camera) {
     // Upload spheres
     uploadSpheres(m_spheres);
 
-    // Upload camera uniforms
+    // Upload uniforms
     glUniform3fv(m_uLocCameraPos, 1, glm::value_ptr(camera.position));
     glUniform3fv(m_uLocCameraForward, 1, glm::value_ptr(camera.forward));
     glUniform3fv(m_uLocCameraRight, 1, glm::value_ptr(camera.right));
     glUniform3fv(m_uLocCameraUp, 1, glm::value_ptr(camera.up));
 
+    glUniform1ui(m_uLocMaxBounces, m_maxBounces);
+    glUniform1ui(m_uLocSamples, m_samples);
+
     // Draw fullscreen quad
     glBindVertexArray(m_VAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Renderer::cleanup() {
+    if (m_framebuffer != 0) {
+        glDeleteFramebuffers(1, &m_framebuffer);
+        m_framebuffer = 0;
+    }
+
+    if (m_colourTexture != 0) {
+        glDeleteTextures(1, &m_colourTexture);
+        m_colourTexture = 0;
+    }
+
     glDeleteVertexArrays(1, &m_VAO);
     glDeleteBuffers(1, &m_VBO);
     glDeleteProgram(m_shaderProgram);

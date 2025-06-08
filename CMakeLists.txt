@@ -34,6 +34,28 @@ target_include_directories(glm INTERFACE external/glm)
 # Find OpenGL
 find_package(OpenGL REQUIRED)
 
+# Configure ImGui
+set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/external/imgui)
+
+add_library(imgui STATIC
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+)
+
+target_include_directories(imgui PUBLIC
+    ${IMGUI_DIR}
+    ${IMGUI_DIR}/backends
+)
+
+target_link_libraries(imgui PUBLIC
+    glfw
+    OpenGL::GL
+)
+
 # Create main executable
 file(GLOB_RECURSE SOURCES src/*.cpp)
 add_executable(${PROJECT_NAME} ${SOURCES})
@@ -45,6 +67,7 @@ target_link_libraries(${PROJECT_NAME}
         glfw
         glm
         OpenGL::GL
+        imgui
 )
 
 # Include directories
@@ -54,6 +77,8 @@ target_include_directories(${PROJECT_NAME}
         external/glad/include
         external/glfw/include
         external/glm
+        external/imgui
+        external/imgui/backends
 )
 
 # Set output directory

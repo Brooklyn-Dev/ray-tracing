@@ -12,6 +12,9 @@ uniform vec3 uCameraForward;
 uniform vec3 uCameraRight;
 uniform vec3 uCameraUp;
 
+uniform uint uMaxBounces;
+uniform uint uSamples;
+
 struct Ray {
 	vec3 origin;
 	vec3 dir;
@@ -142,9 +145,7 @@ vec3 Trace(Ray ray, inout uint rngState) {
 	vec3 incomingLight = vec3(0.0);
 	vec3 rayColour = vec3(1.0);
 
-	const uint MAX_BOUNCES = 16;
-
-	for (uint i = 0; i < MAX_BOUNCES; i++) {
+	for (uint i = 0; i < uMaxBounces; i++) {
 		HitInfo hit = CalculateRayCollision(ray);
 
 		if (!hit.hit)
@@ -182,9 +183,8 @@ void main() {
 	
 	Ray ray;
 	vec3 totalIncomingLight = vec3(0.0);
-	const uint SAMPLES = 100;
 
-	for (uint i = 0; i < SAMPLES; i++) {
+	for (uint i = 0; i < uSamples; i++) {
 		uint rngState = pixelIndex + i * 719393u;  // New seed
 
 		ray.origin = uCameraPosition;
@@ -193,6 +193,6 @@ void main() {
 		totalIncomingLight += Trace(ray, rngState);
 	}
 
-	vec3 colour = totalIncomingLight / float(SAMPLES);
+	vec3 colour = totalIncomingLight / float(uSamples);
 	FragColour = vec4(colour, 1.0);
 }
