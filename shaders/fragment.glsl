@@ -13,6 +13,7 @@ uniform vec3 uCameraRight;
 uniform vec3 uCameraUp;
 
 uniform uint uMaxBounces;
+uniform uint uSamplesPerPixel;
 uniform uint uFrame;
 
 layout(rgba32f, binding = 0) uniform image2D uAccumulatedImage;
@@ -52,14 +53,19 @@ uniform int uNumSpheres;
 
 // PCG (permuted congruential generator). Thanks to:
 // www.pcg-random.org and www.reedbeta.com/blog/hash-functions-for-gpu-rendering
-uint NextRandomPCG(inout uint state) {
+uint PCG_Hash(uint state) {
 	state = state * 747796405u + 2891336453u;
 	uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
 	return ((word >> 22u) ^ word);
 }
 
+void NextRandomPCG(inout uint state) {
+    state = PCG_Hash(state);
+}
+
 float RandomValue(inout uint state) {
-	return NextRandomPCG(state) / 4294967295.0;  // 2^32 - 1
+    state = PCG_Hash(state);
+	return float(state) / 4294967295.0;  // 2^32 - 1
 }
 
 // Normal Distribution (mean=0, std=1). Thanks to:
@@ -182,21 +188,32 @@ void main() {
 	// RNG seed
 	ivec2 pixelCoords = ivec2(gl_FragCoord.xy);
 	uint pixelIndex = uint(pixelCoords.y) * uint(uResolution.x) + uint(pixelCoords.x);
-	uint rngState = pixelIndex + uFrame * 719393u;
+    uint rngState = pixelIndex + uFrame * 719393u;
 	
-    // Path Tracing
-    Ray ray;
-    ray.origin = uCameraPosition;
-    ray.dir = normalize(uCameraForward + uv.x * uCameraRight + uv.y * uCameraUp);
-    vec3 incomingLight = Trace(ray, rngState);
+	vec3 frameSampleAccumulator = vec3(0.0);
+
+	for (uint s = 0; s < uSamplesPerPixel; ++s) {        
+		uint sampleRngState = PCG_Hash(rngState + s * 131071u);
+
+	    // Path Tracing
+		Ray ray;
+		ray.origin = uCameraPosition;
+		ray.dir = normalize(uCameraForward + uv.x * uCameraRight + uv.y * uCameraUp);
+
+		vec3 incomingLight = Trace(ray, sampleRngState);
+
+		frameSampleAccumulator += incomingLight;
+	}
+	
+    vec3 currentFrameColour = frameSampleAccumulator / float(uSamplesPerPixel);
 
     // Accumulation (progressive rendering)
     vec3 finalAccumulated;
     if (uFrame == 1) {
-        finalAccumulated = incomingLight;
+        finalAccumulated = currentFrameColour;
     } else {
         vec4 prevAccumulated = imageLoad(uAccumulatedImage, pixelCoords);
-        finalAccumulated = (prevAccumulated.rgb * float(uFrame - 1) + incomingLight) / float(uFrame);
+        finalAccumulated = (prevAccumulated.rgb * float(uFrame - 1) + currentFrameColour) / float(uFrame);
     }
 
     imageStore(uAccumulatedImage, pixelCoords, vec4(finalAccumulated, 1.0));

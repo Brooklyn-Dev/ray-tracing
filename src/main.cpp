@@ -21,7 +21,6 @@ uint32_t g_viewportWidth = 0;
 uint32_t g_viewportHeight = 0;
 bool g_viewportFocused = false;
 bool g_viewportHovered = false;
-bool g_needsRender = true;
 
 // Camera and Input
 Camera g_camera;
@@ -71,8 +70,6 @@ void processInput(GLFWwindow* window) {
         g_camera.position -= glm::vec3(0.0f, velocity, 0.0f);
         cameraMoved = true;
     }
-
-    if (cameraMoved) g_needsRender = true;
 }
 
 void cursorPosCallback(GLFWwindow* window, double x, double y) {
@@ -97,7 +94,6 @@ void cursorPosCallback(GLFWwindow* window, double x, double y) {
         if (g_camera.pitch < -89.0f) g_camera.pitch = -89.0f;
 
         g_camera.updateOrientation();
-        g_needsRender = true;
     }
 }
 
@@ -128,7 +124,6 @@ void performRender()
     double renderStartTime = glfwGetTime();
     g_renderer->render(g_camera);
     g_lastRenderTime = (float)((glfwGetTime() - renderStartTime) * 1000.0);
-    g_needsRender = false;
 }
 
 // == INITIALISATION FUNCTIONS ===
@@ -243,10 +238,13 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
 
         ImGui::Text("Max Bounces:");
         static int maxBounces = 2;
-        if (ImGui::SliderInt("##Max Bounces", &maxBounces, 1, 32)) {
+        if (ImGui::SliderInt("##Max Bounces", &maxBounces, 1, 32))
             g_renderer->setMaxBounces(maxBounces);
-            g_needsRender = true;
-        }
+
+        ImGui::Text("Samples Per Pixel:");
+        static int ssp = 1;
+        if (ImGui::SliderInt("##Samples Per Pixel", &ssp, 1, 128))
+            g_renderer->setSamplesPerPixel(ssp);
 
         ImGui::PopItemWidth();
     }

@@ -36,6 +36,7 @@ void Renderer::setupShaders() {
     m_uLocCameraRight = glGetUniformLocation(m_shaderProgram, "uCameraRight");
     m_uLocCameraUp = glGetUniformLocation(m_shaderProgram, "uCameraUp");
     m_uLocMaxBounces = glGetUniformLocation(m_shaderProgram, "uMaxBounces");
+    m_uLocSamplesPerPixel = glGetUniformLocation(m_shaderProgram, "uSamplesPerPixel");
     m_uLocFrame = glGetUniformLocation(m_shaderProgram, "uFrame");
     m_uLocNumSpheres = glGetUniformLocation(m_shaderProgram, "uNumSpheres");
     glUseProgram(0);
@@ -177,6 +178,13 @@ void Renderer::setMaxBounces(uint32_t bounces) {
     }
 }
 
+void Renderer::setSamplesPerPixel(uint32_t samples) {
+    if (m_samplesPerPixel != samples) {
+        m_samplesPerPixel = samples;
+        resetFrame();
+    }
+}
+
 GLuint Renderer::getDisplayTexture() const {
     return m_displayTexture;
 }
@@ -223,6 +231,7 @@ void Renderer::render(const Camera& camera) {
     glUniform3fv(m_uLocCameraRight, 1, glm::value_ptr(camera.right));
     glUniform3fv(m_uLocCameraUp, 1, glm::value_ptr(camera.up));
     glUniform1ui(m_uLocMaxBounces, m_maxBounces);
+    glUniform1ui(m_uLocSamplesPerPixel, m_samplesPerPixel);
     glUniform1ui(m_uLocFrame, m_frame);
 
     // Bind accumulated image

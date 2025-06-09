@@ -25,6 +25,7 @@ private:
 	uint32_t m_height;
 
 	uint32_t m_maxBounces = 2;
+	uint32_t m_samplesPerPixel = 1;
 	uint32_t m_frame = 1;
 
 	// Uniform locations for traceProgram
@@ -34,6 +35,7 @@ private:
 	GLint m_uLocCameraRight;
 	GLint m_uLocCameraUp;
 	GLint m_uLocMaxBounces;
+	GLint m_uLocSamplesPerPixel;
 	GLint m_uLocFrame;
 
 	std::vector<Sphere> m_spheres;
@@ -58,6 +60,7 @@ public:
 
 	void onResize(uint32_t width, uint32_t height);
 	void setMaxBounces(uint32_t bounces);
+	void setSamplesPerPixel(uint32_t samples);
 
 	void render(const Camera& camera);
 	void resetFrame();
