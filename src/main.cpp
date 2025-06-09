@@ -139,7 +139,7 @@ void initGLFW() {
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 }
@@ -184,7 +184,7 @@ void setupImGui(GLFWwindow* window) {
     }
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 430");
+    ImGui_ImplOpenGL3_Init("#version 440");
 }
 
 void setupRenderer(uint32_t initialWidth, uint32_t initialHeight) {
@@ -232,23 +232,17 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
 
     // Performance / Debug
     ImGui::Text("Last render: %.3fms", g_lastRenderTime);
+    ImGui::Text("Frame number: %.1f", (float)g_renderer->getFrame());
     ImGui::Text("Application FPS: %.1f", io.Framerate);
-    ImGui::Text("Viewport Size: %dx%d", g_viewportWidth, g_viewportHeight);
+    ImGui::Text("Viewport size: %dx%d", g_viewportWidth, g_viewportHeight);
     ImGui::Separator();
 
     // Rendering Parameters
     if (ImGui::CollapsingHeader("Renderer Settings")) {
-        ImGui::PushItemWidth(-1); // Sliders fill available width
-
-        ImGui::Text("Samples Per Pixel:");
-        static int samples = 1; // Persistent slider state
-        if (ImGui::SliderInt("##Samples Per Pixel", &samples, 1, 512)) {
-            g_renderer->setSamples(samples);
-            g_needsRender = true;
-        }
+        ImGui::PushItemWidth(-1);  // Sliders fill available width
 
         ImGui::Text("Max Bounces:");
-        static int maxBounces = 2; // Persistent slider state
+        static int maxBounces = 2;
         if (ImGui::SliderInt("##Max Bounces", &maxBounces, 1, 32)) {
             g_renderer->setMaxBounces(maxBounces);
             g_needsRender = true;
@@ -272,7 +266,7 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
         ImGui::Text("Yaw: %.1f  Pitch: %.1f", g_camera.yaw, g_camera.pitch);
         ImGui::Unindent();
 
-        ImGui::PushItemWidth(-1); // Sliders fill available width
+        ImGui::PushItemWidth(-1);  // Sliders fill available width
 
         ImGui::Text("Camera Speed:");
         ImGui::SliderFloat("##Camera Speed", &g_cameraSpeed, 0.1f, 10.0f, "%.1f");
@@ -300,17 +294,15 @@ void renderImGuiViewportWindow() {
 
         if (g_renderer)
             g_renderer->onResize(g_viewportWidth, g_viewportHeight);
-
-        g_needsRender = true;
     }
 
     // Render the scene if needed and dimensions are valid
-    if (g_needsRender && g_viewportWidth > 0 && g_viewportHeight > 0)
+    if (g_viewportWidth > 0 && g_viewportHeight > 0)
         performRender();
 
     // Display the rendered image texture
-    if (g_renderer && g_renderer->getColourTexture() && g_viewportWidth > 0 && g_viewportHeight > 0)
-        ImGui::Image(static_cast<ImTextureID>(g_renderer->getColourTexture()), viewportSize, ImVec2(0, 1), ImVec2(1, 0));
+    if (g_renderer && g_renderer->getDisplayTexture() && g_viewportWidth > 0 && g_viewportHeight > 0)
+        ImGui::Image(static_cast<ImTextureID>(g_renderer->getDisplayTexture()), viewportSize, ImVec2(0, 1), ImVec2(1, 0));
 
     g_viewportFocused = ImGui::IsWindowFocused();
     g_viewportHovered = ImGui::IsWindowHovered();

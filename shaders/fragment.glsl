@@ -1,4 +1,4 @@
-#version 430 core
+#version 440 core
 
 const float PI = 3.1415926;
 
@@ -13,7 +13,9 @@ uniform vec3 uCameraRight;
 uniform vec3 uCameraUp;
 
 uniform uint uMaxBounces;
-uniform uint uSamples;
+uniform uint uFrame;
+
+layout(rgba32f, binding = 0) uniform image2D uAccumulatedImage;
 
 struct Ray {
 	vec3 origin;
@@ -180,19 +182,27 @@ void main() {
 	// RNG seed
 	ivec2 pixelCoords = ivec2(gl_FragCoord.xy);
 	uint pixelIndex = uint(pixelCoords.y) * uint(uResolution.x) + uint(pixelCoords.x);
+	uint rngState = pixelIndex + uFrame * 719393u;
 	
-	Ray ray;
-	vec3 totalIncomingLight = vec3(0.0);
+    // Path Tracing
+    Ray ray;
+    ray.origin = uCameraPosition;
+    ray.dir = normalize(uCameraForward + uv.x * uCameraRight + uv.y * uCameraUp);
+    vec3 incomingLight = Trace(ray, rngState);
 
-	for (uint i = 0; i < uSamples; i++) {
-		uint rngState = pixelIndex + i * 719393u;  // New seed
+    // Accumulation (progressive rendering)
+    vec3 finalAccumulated;
+    if (uFrame == 1) {
+        finalAccumulated = incomingLight;
+    } else {
+        vec4 prevAccumulated = imageLoad(uAccumulatedImage, pixelCoords);
+        finalAccumulated = (prevAccumulated.rgb * float(uFrame - 1) + incomingLight) / float(uFrame);
+    }
 
-		ray.origin = uCameraPosition;
-		ray.dir = normalize(uCameraForward + uv.x * uCameraRight + uv.y * uCameraUp);
+    imageStore(uAccumulatedImage, pixelCoords, vec4(finalAccumulated, 1.0));
+    
+    // Gamma Correction
+    finalAccumulated = pow(finalAccumulated, vec3(1.0/2.2));
 
-		totalIncomingLight += Trace(ray, rngState);
-	}
-
-	vec3 colour = totalIncomingLight / float(uSamples);
-	FragColour = vec4(colour, 1.0);
+    FragColour = vec4(finalAccumulated, 1.0);
 }
