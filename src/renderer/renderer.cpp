@@ -38,6 +38,9 @@ void Renderer::setupShaders() {
     m_uLocMaxBounces = glGetUniformLocation(m_shaderProgram, "uMaxBounces");
     m_uLocSamplesPerPixel = glGetUniformLocation(m_shaderProgram, "uSamplesPerPixel");
     m_uLocFrame = glGetUniformLocation(m_shaderProgram, "uFrame");
+    m_uLocSkyboxTexture = glGetUniformLocation(m_shaderProgram, "uSkyboxTexture");
+    m_uLocHasSkybox = glGetUniformLocation(m_shaderProgram, "uHasSkybox");
+    m_uLocSkyboxExposure = glGetUniformLocation(m_shaderProgram, "uSkyboxExposure");
     m_uLocNumSpheres = glGetUniformLocation(m_shaderProgram, "uNumSpheres");
     glUseProgram(0);
 }
@@ -185,6 +188,24 @@ void Renderer::setSamplesPerPixel(uint32_t samples) {
     }
 }
 
+void Renderer::setSkybox(const std::string& filepath) {
+    if (filepath == "") {
+        m_skybox.cleanup();
+        resetFrame();
+        return;
+    }
+
+    m_skybox.load(filepath);
+    resetFrame();
+}
+
+void Renderer::setSkyboxExposure(float exposure) {
+    if (m_skyboxExposure != exposure) {
+        m_skyboxExposure = exposure;
+        resetFrame();
+    }
+}
+
 GLuint Renderer::getDisplayTexture() const {
     return m_displayTexture;
 }
@@ -233,6 +254,18 @@ void Renderer::render(const Camera& camera) {
     glUniform1ui(m_uLocMaxBounces, m_maxBounces);
     glUniform1ui(m_uLocSamplesPerPixel, m_samplesPerPixel);
     glUniform1ui(m_uLocFrame, m_frame);
+
+    // Skybox
+    if (m_skybox.getTextureID() != 0) {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, m_skybox.getTextureID());
+        glUniform1i(m_uLocSkyboxTexture, 1);
+        glUniform1i(m_uLocHasSkybox, 1);
+        glUniform1f(m_uLocSkyboxExposure, m_skyboxExposure);
+    }
+    else {
+        glUniform1i(m_uLocHasSkybox, 0);
+    }
 
     // Bind accumulated image
     glBindImageTexture(0, m_accumulatedImage, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -288,5 +321,8 @@ void Renderer::cleanup() {
     if (m_sphereSSBO != 0) {
         glDeleteBuffers(1, &m_sphereSSBO);
         m_sphereSSBO = 0;
+    }
+    if (m_skybox.getTextureID() != 0) {
+        m_skybox.cleanup();
     }
 }

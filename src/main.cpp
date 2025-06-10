@@ -10,6 +10,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#include "ImGuiFileDialog.h"
+
 #include "camera\camera.hpp"
 #include "renderer\renderer.hpp"
 
@@ -38,6 +40,7 @@ float g_lastRenderTime = 0.0f;
 
 // ImGui State
 bool g_firstFrame = true;
+char g_skyboxPathBuffer[256] = "";
 
 // === INPUT HANDLING ===
 void processInput(GLFWwindow* window) {
@@ -234,6 +237,32 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
 
     // Rendering Parameters
     if (ImGui::CollapsingHeader("Renderer Settings")) {
+
+        ImGui::Text("Skybox Texture:");
+
+        if (ImGui::Button("Browse...")) {
+            IGFD::FileDialogConfig config;
+            config.path = "./skyboxes";
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseSkyboxFile", "Choose Skybox", ".hdr", config);
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Clear Skybox"))
+            if (g_renderer)
+                g_renderer->setSkybox("");
+
+        ImGui::PushItemWidth(-1);  // Sliders fill available width
+
+        ImGui::Text("Skybox Exposure (EV):");
+        static float skyboxExposureEV = 0.0f;
+        if (ImGui::SliderFloat("##SkyboxExposureEV", &skyboxExposureEV, -5.0f, 5.0f)) {
+            float linearExposure = powf(2.0f, skyboxExposureEV);
+            g_renderer->setSkyboxExposure(linearExposure);
+        }
+
+        ImGui::PopItemWidth();
+
         ImGui::PushItemWidth(-1);  // Sliders fill available width
 
         ImGui::Text("Max Bounces:");
@@ -387,6 +416,19 @@ int main() {
         renderImGuiSettingsWindow(io);
         renderImGuiViewportWindow();
 
+        if (ImGuiFileDialog::Instance()->Display("ChooseSkyboxFile")) {
+            if (ImGuiFileDialog::Instance()->IsOk()) {
+                std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+
+                strncpy(g_skyboxPathBuffer, filePath.c_str(), sizeof(g_skyboxPathBuffer) - 1);
+                g_skyboxPathBuffer[sizeof(g_skyboxPathBuffer) - 1] = '\0';
+
+                if (g_renderer)
+                    g_renderer->setSkybox(filePath);
+            }   
+            ImGuiFileDialog::Instance()->Close();
+        }
+
         // Final ImGui render and swap buffers
         ImGui::Render();
         int display_w, display_h;
@@ -397,8 +439,7 @@ int main() {
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // Handle ImGui viewports
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
             GLFWwindow* backup_current_context = glfwGetCurrentContext();
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();

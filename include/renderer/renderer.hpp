@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
+#include "skybox/skybox.hpp"
 #include "types.hpp"
 
 struct Camera;
@@ -28,7 +29,7 @@ private:
 	uint32_t m_samplesPerPixel = 1;
 	uint32_t m_frame = 1;
 
-	// Uniform locations for traceProgram
+	// Uniform locations for shader program
 	GLint m_uLocResolution;
 	GLint m_uLocCameraPos;
 	GLint m_uLocCameraForward;
@@ -37,6 +38,12 @@ private:
 	GLint m_uLocMaxBounces;
 	GLint m_uLocSamplesPerPixel;
 	GLint m_uLocFrame;
+	GLint m_uLocSkyboxTexture;
+	GLint m_uLocHasSkybox;
+	GLint m_uLocSkyboxExposure;
+
+	Skybox m_skybox;
+	float m_skyboxExposure = 1.0f;
 
 	std::vector<Sphere> m_spheres;
 	GLuint m_sphereSSBO = 0;
@@ -49,6 +56,7 @@ private:
 
 	void createTexturesAndFBO(uint32_t width, uint32_t height);
 
+	void resetFrame();
 	void cleanup();
 
 public:
@@ -58,10 +66,11 @@ public:
 	GLuint getDisplayTexture() const;
 	uint32_t getFrame() const;
 
-	void onResize(uint32_t width, uint32_t height);
 	void setMaxBounces(uint32_t bounces);
 	void setSamplesPerPixel(uint32_t samples);
+	void setSkybox(const std::string& filepath);
+	void setSkyboxExposure(float exposure);
 
+	void onResize(uint32_t width, uint32_t height);
 	void render(const Camera& camera);
-	void resetFrame();
 };

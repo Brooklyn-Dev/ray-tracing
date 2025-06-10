@@ -18,6 +18,10 @@ uniform uint uFrame;
 
 layout(rgba32f, binding = 0) uniform image2D uAccumulatedImage;
 
+uniform sampler2D uSkyboxTexture;
+uniform int uHasSkybox;
+uniform float uSkyboxExposure;
+
 struct Ray {
 	vec3 origin;
 	vec3 dir;
@@ -51,6 +55,21 @@ layout(std430, binding = 0) buffer Spheres {
 
 uniform int uNumSpheres;
 
+// === SKYBOX ===
+vec2 calculateEquirectangularUV(vec3 dir) {
+	dir = normalize(dir);
+
+	float phi = atan(dir.z, dir.x);
+	float theta = acos(dir.y);
+
+	float u = phi / (2.0 * PI) + 0.5;  // Map to [0, 1]
+	float v = theta / PI;  // Map to [0, 1]
+
+	return vec2(u, v);
+}
+
+// === RANDOMNESS ===
+
 // PCG (permuted congruential generator). Thanks to:
 // www.pcg-random.org and www.reedbeta.com/blog/hash-functions-for-gpu-rendering
 uint PCG_Hash(uint state) {
@@ -82,6 +101,8 @@ vec3 RandomUnitVector(inout uint state) {
 	float z = RandomValueNormalDistribution(state);
 	return normalize(vec3(x, y ,z ));
 }
+
+// === RAYS ===
 
 bool RaySphereIntersect(Ray ray, vec3 centre, float radius, out float dst) {
 	vec3 oc = ray.origin - centre;
@@ -156,8 +177,14 @@ vec3 Trace(Ray ray, inout uint rngState) {
 	for (uint i = 0; i < uMaxBounces; i++) {
 		HitInfo hit = CalculateRayCollision(ray);
 
-		if (!hit.hit)
+		if (!hit.hit) {
+			// Environmental lighting
+			if (uHasSkybox == 1) {
+				vec3 environmentColour = texture(uSkyboxTexture, calculateEquirectangularUV(ray.dir)).rgb;
+				incomingLight += environmentColour * rayColour * uSkyboxExposure;
+			}
 			break;
+		}
 
 		// Calculate next ray
 		ray.origin = hit.hitPoint + hit.normal * 0.0001;

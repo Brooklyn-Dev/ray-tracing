@@ -56,6 +56,22 @@ target_link_libraries(imgui PUBLIC
     OpenGL::GL
 )
 
+# Add ImGuiFileDialog
+set(IMGUIFILEDIALOG_DIR ${CMAKE_SOURCE_DIR}/external/imguifiledialog)
+
+add_library(ImGuiFileDialog STATIC
+    ${IMGUIFILEDIALOG_DIR}/ImGuiFileDialog.cpp
+)
+
+target_include_directories(ImGuiFileDialog PUBLIC
+    ${IMGUIFILEDIALOG_DIR}
+    ${IMGUI_DIR}
+)
+
+target_link_libraries(ImGuiFileDialog PUBLIC
+    imgui
+)
+
 # Create main executable
 file(GLOB_RECURSE SOURCES src/*.cpp)
 add_executable(${PROJECT_NAME} ${SOURCES})
@@ -68,6 +84,7 @@ target_link_libraries(${PROJECT_NAME}
         glm
         OpenGL::GL
         imgui
+        ImGuiFileDialog
 )
 
 # Include directories
@@ -79,6 +96,8 @@ target_include_directories(${PROJECT_NAME}
         external/glm
         external/imgui
         external/imgui/backends
+        external/stb
+        external/imfiledialog
 )
 
 # Set output directory
@@ -92,4 +111,12 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/shaders
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders
+)
+
+# Copy skyboxes to output directory
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/skyboxes
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/skyboxes
 )
