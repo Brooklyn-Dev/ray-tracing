@@ -41,6 +41,14 @@ struct Sphere {
 	Material material;
 };
 
+struct Plane {
+	vec3 position;
+	float _pad0;
+	vec3 normal;
+	float _pad1;
+	Material material;
+};
+
 struct HitInfo {
 	bool hit;
 	float dst;
@@ -49,11 +57,11 @@ struct HitInfo {
 	Material material;
 };
 
-layout(std430, binding = 0) buffer Spheres {
-	Sphere spheres[];
-};
+layout(std430, binding = 0) readonly buffer Spheres { Sphere spheres[]; };
+layout(std430, binding = 1) readonly buffer Planes { Plane planes[]; };
 
 uniform int uNumSpheres;
+uniform int uNumPlanes;
 
 // === SKYBOX ===
 vec2 calculateEquirectangularUV(vec3 dir) {
@@ -104,18 +112,43 @@ vec3 RandomUnitVector(inout uint state) {
 
 // === RAYS ===
 
-bool RaySphereIntersect(Ray ray, vec3 centre, float radius, out float dst) {
-	vec3 oc = ray.origin - centre;
+HitInfo RaySphereIntersect(Ray ray, Sphere sphere) {
+	HitInfo hit;
+    hit.hit = false;
+    hit.dst = 1e20;
+
+	vec3 oc = ray.origin - sphere.position;
 	float a = dot(ray.dir, ray.dir);
 	float b = 2.0 * dot(oc, ray.dir);
-	float c = dot(oc, oc) - radius * radius;
+	float c = dot(oc, oc) - sphere.radius * sphere.radius;
 	float discriminant = b * b - 4.0 * a * c;
 
-	if (discriminant < 0.0)
-		return false;
+	if (discriminant >= 0.0) {
+		hit.hit = true;
+		hit.dst = (-b - sqrt(discriminant)) / (2.0 * a);
+		hit.hitPoint = ray.origin + ray.dir * hit.dst;
+		hit.normal = normalize(hit.hitPoint - sphere.position);
+		hit.material = sphere.material;
+	}
 
-	dst = (-b - sqrt(discriminant)) / (2.0 * a);
-	return dst >= 0.0;
+	return hit;
+}
+
+HitInfo RayPlaneIntersect(Ray ray, Plane plane) {
+	HitInfo hit;
+    hit.hit = false;
+    hit.dst = 1e20;
+
+	float denominator = dot(plane.normal, ray.dir);
+	if (denominator < 0.0) {
+		hit.hit = true;
+		hit.dst = dot(plane.normal, plane.position - ray.origin) / denominator;
+		hit.hitPoint = ray.origin + ray.dir * hit.dst;
+		hit.normal = plane.normal;
+		hit.material = plane.material;
+	}
+
+	return hit;
 }
 
 HitInfo CalculateRayCollision(Ray ray) {
@@ -123,18 +156,16 @@ HitInfo CalculateRayCollision(Ray ray) {
 	closestHit.hit = false;
 	closestHit.dst = 1e20;
 
-	// Find closest intersection
 	for (int i = 0; i < uNumSpheres; ++i) {
-		float dst;
-		if (RaySphereIntersect(ray, spheres[i].position, spheres[i].radius, dst)) {
-			if (dst > 0.0 && dst < closestHit.dst) {
-				closestHit.hit = true;
-				closestHit.dst = dst;
-				closestHit.hitPoint = ray.origin + ray.dir * dst;
-				closestHit.normal = normalize(closestHit.hitPoint - spheres[i].position);
-				closestHit.material = spheres[i].material;
-			}
-		}
+		HitInfo currentHit = RaySphereIntersect(ray, spheres[i]);
+		if (currentHit.hit && currentHit.dst > 0.0 && currentHit.dst < closestHit.dst)
+			closestHit = currentHit;	
+	}
+	
+	for (int i = 0; i < uNumPlanes; ++i) {
+		HitInfo currentHit = RayPlaneIntersect(ray, planes[i]);
+		if (currentHit.hit && currentHit.dst > 0.0 && currentHit.dst < closestHit.dst)
+			closestHit = currentHit;	
 	}
 
 	return closestHit;

@@ -49,10 +49,17 @@ private:
 	GLuint m_sphereSSBO = 0;
 	GLint m_uLocNumSpheres;
 
+	std::vector<Plane> m_planes;
+	GLuint m_planeSSBO = 0;
+	GLint m_uLocNumPlanes;
+
 	void setupShaders();
 	void setupQuad();
+
 	void setupSpheres();
 	void uploadSpheres(const std::vector<Sphere>& spheres);
+	void setupPlanes();
+	void uploadPlanes(const std::vector<Plane>& planes);
 
 	void createTexturesAndFBO(uint32_t width, uint32_t height);
 

@@ -15,3 +15,11 @@ struct alignas(16) Sphere {
 	float radius;
 	Material material;
 };
+
+struct alignas(16) Plane {
+	glm::vec3 position;
+	float _pad0;
+	glm::vec3 normal;
+	float _pad1;
+	Material material;
+};

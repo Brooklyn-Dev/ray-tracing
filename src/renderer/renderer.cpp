@@ -14,6 +14,7 @@ Renderer::Renderer(uint32_t width, uint32_t height)
 	setupShaders();
 	setupQuad();
     setupSpheres();
+    setupPlanes();
 
     createTexturesAndFBO(width, height);
     resetFrame();
@@ -42,6 +43,7 @@ void Renderer::setupShaders() {
     m_uLocHasSkybox = glGetUniformLocation(m_shaderProgram, "uHasSkybox");
     m_uLocSkyboxExposure = glGetUniformLocation(m_shaderProgram, "uSkyboxExposure");
     m_uLocNumSpheres = glGetUniformLocation(m_shaderProgram, "uNumSpheres");
+    m_uLocNumPlanes = glGetUniformLocation(m_shaderProgram, "uNumPlanes");
     glUseProgram(0);
 }
 
@@ -83,37 +85,35 @@ void Renderer::setupSpheres() {
         glm::vec3(0.0f, 0.0f, 1.0f)   // Blue
     };
 
-    const float startX = -2.0f;
-    const float spacing = 1.5f;
-    const float baseRadius = 0.3f;
-    const float radiusIncrement = 0.2f;
+    const float gap = 0.5f;
+    const float baseRadius = 0.5f;
+    const float radiusInc = 0.5f;
+
+    float currentX = 0;
 
     for (int i = 0; i < 3; ++i) {
         Sphere sphere;
-        sphere.position = glm::vec3(startX + i * spacing, 0.0f, -3.0f);
-        sphere.radius = baseRadius + i * radiusIncrement;
+        sphere.radius = baseRadius + i * radiusInc;
+
+        if (i > 0) {
+            float prevRadius = baseRadius + (i - 1) * radiusInc;
+            currentX += prevRadius + gap + sphere.radius;
+        }
+
+        sphere.position = glm::vec3(currentX, 1.5f - (2 - i) * radiusInc, -3.0f);
         sphere.material.colour = colours[i];
         sphere.material.emissionColour = glm::vec3(0.0f);
         sphere.material.emissionStrength = 0.0f;
         m_spheres.push_back(sphere);
     }
 
-    // "Ground"
-    Sphere sphereGround;
-    sphereGround.position = glm::vec3(0.0f, -20.5f, -1.0f);
-    sphereGround.radius = 20.0f;
-    sphereGround.material.colour = glm::vec3(0.25f, 0.1f, 0.55f);
-    sphereGround.material.emissionColour = glm::vec3(0.0f);
-    sphereGround.material.emissionStrength = 0.0f;
-    m_spheres.push_back(sphereGround);
-
     // Light
     Sphere sphereLight;
-    sphereLight.position = glm::vec3(-5.0f, 5.0f, -32.0f);
-    sphereLight.radius = 20.0f;
+    sphereLight.position = glm::vec3(-5.0f, 15.0f, -32.0f);
+    sphereLight.radius = 10.0f;
     sphereLight.material.colour = glm::vec3(1.0f);
     sphereLight.material.emissionColour = glm::vec3(1.0f);
-    sphereLight.material.emissionStrength = 5.0f;
+    sphereLight.material.emissionStrength = 4.0f;
     m_spheres.push_back(sphereLight);
 
     // Initialise sphere buffer
@@ -131,6 +131,35 @@ void Renderer::uploadSpheres(const std::vector<Sphere>& spheres) {
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, spheres.size() * sizeof(Sphere), spheres.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     glUniform1i(m_uLocNumSpheres, (GLint)spheres.size());
+}
+
+void Renderer::setupPlanes() {
+    m_planes.clear();
+
+    // Ground
+    Plane plane;
+    plane.position = glm::vec3(0.0f);
+    plane.normal = glm::vec3(0.0f, 1.0f, 0.0f);
+    plane.material.colour = glm::vec3(1.0f);
+    plane.material.emissionColour = glm::vec3(0.0f);
+    plane.material.emissionStrength = 0.0f;
+    m_planes.push_back(plane);
+
+    // Initialise plane buffer
+    if (m_planeSSBO == 0)
+        glGenBuffers(1, &m_planeSSBO);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_planeSSBO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, m_planes.size() * sizeof(Plane), nullptr, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_planeSSBO);  // binding = 1
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void Renderer::uploadPlanes(const std::vector<Plane>& planes) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_planeSSBO);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, planes.size() * sizeof(Plane), planes.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glUniform1i(m_uLocNumPlanes, (GLint)planes.size());
 }
 
 void Renderer::createTexturesAndFBO(uint32_t width, uint32_t height) {
@@ -247,6 +276,7 @@ void Renderer::render(const Camera& camera) {
     // Upload shader uniforms
     glUniform2f(m_uLocResolution, (float)m_width, (float)m_height);
     uploadSpheres(m_spheres);
+    uploadPlanes(m_planes);
     glUniform3fv(m_uLocCameraPos, 1, glm::value_ptr(camera.position));
     glUniform3fv(m_uLocCameraForward, 1, glm::value_ptr(camera.forward));
     glUniform3fv(m_uLocCameraRight, 1, glm::value_ptr(camera.right));

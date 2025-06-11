@@ -1,7 +1,7 @@
 #include "camera/camera.hpp"
 
 Camera::Camera()
-	: position(0.0f, 0.0f, 0.0f),
+	: position(0.0f, 1.0f, 0.0f),
 	  yaw(-90.0f),
 	  pitch(0.0f)
 {
