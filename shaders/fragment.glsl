@@ -12,6 +12,7 @@ uniform vec3 uCameraForward;
 uniform vec3 uCameraRight;
 uniform vec3 uCameraUp;
 
+uniform float uGamma;
 uniform uint uMaxBounces;
 uniform uint uSamplesPerPixel;
 uniform uint uFrame;
@@ -277,7 +278,7 @@ void main() {
     imageStore(uAccumulatedImage, pixelCoords, vec4(finalAccumulated, 1.0));
     
     // Gamma Correction
-    finalAccumulated = pow(finalAccumulated, vec3(1.0/2.2));
+    finalAccumulated = pow(finalAccumulated, vec3(1.0 / uGamma));
 
     FragColour = vec4(finalAccumulated, 1.0);
 }

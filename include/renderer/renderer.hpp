@@ -25,6 +25,7 @@ private:
 	uint32_t m_width;
 	uint32_t m_height;
 
+	float m_gamma = 2.2;
 	uint32_t m_maxBounces = 2;
 	uint32_t m_samplesPerPixel = 1;
 	uint32_t m_frame = 1;
@@ -35,6 +36,7 @@ private:
 	GLint m_uLocCameraForward;
 	GLint m_uLocCameraRight;
 	GLint m_uLocCameraUp;
+	GLint m_uLocGamma;
 	GLint m_uLocMaxBounces;
 	GLint m_uLocSamplesPerPixel;
 	GLint m_uLocFrame;
@@ -73,6 +75,7 @@ public:
 	GLuint getDisplayTexture() const;
 	uint32_t getFrame() const;
 
+	void setGamma(float gamma);
 	void setMaxBounces(uint32_t bounces);
 	void setSamplesPerPixel(uint32_t samples);
 	void setSkybox(const std::string& filepath);

@@ -265,6 +265,11 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
 
         ImGui::PushItemWidth(-1);  // Sliders fill available width
 
+        ImGui::Text("Gamma:");
+        static float gamma = 2.2;
+        if (ImGui::SliderFloat("##Gamma", &gamma, 1.8, 2.8, "%.2f"))
+            g_renderer->setGamma(gamma);
+
         ImGui::Text("Max Bounces:");
         static int maxBounces = 2;
         if (ImGui::SliderInt("##Max Bounces", &maxBounces, 1, 32))

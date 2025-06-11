@@ -36,6 +36,7 @@ void Renderer::setupShaders() {
     m_uLocCameraForward = glGetUniformLocation(m_shaderProgram, "uCameraForward");
     m_uLocCameraRight = glGetUniformLocation(m_shaderProgram, "uCameraRight");
     m_uLocCameraUp = glGetUniformLocation(m_shaderProgram, "uCameraUp");
+    m_uLocGamma = glGetUniformLocation(m_shaderProgram, "uGamma");
     m_uLocMaxBounces = glGetUniformLocation(m_shaderProgram, "uMaxBounces");
     m_uLocSamplesPerPixel = glGetUniformLocation(m_shaderProgram, "uSamplesPerPixel");
     m_uLocFrame = glGetUniformLocation(m_shaderProgram, "uFrame");
@@ -203,6 +204,13 @@ void Renderer::onResize(uint32_t width, uint32_t height) {
     resetFrame();
 }
 
+void Renderer::setGamma(float gamma) {
+    if (m_gamma != gamma) {
+        m_gamma = gamma;
+        resetFrame();
+    }
+}
+
 void Renderer::setMaxBounces(uint32_t bounces) {
     if (m_maxBounces != bounces) {
         m_maxBounces = bounces;
@@ -281,6 +289,7 @@ void Renderer::render(const Camera& camera) {
     glUniform3fv(m_uLocCameraForward, 1, glm::value_ptr(camera.forward));
     glUniform3fv(m_uLocCameraRight, 1, glm::value_ptr(camera.right));
     glUniform3fv(m_uLocCameraUp, 1, glm::value_ptr(camera.up));
+    glUniform1f(m_uLocGamma, m_gamma);
     glUniform1ui(m_uLocMaxBounces, m_maxBounces);
     glUniform1ui(m_uLocSamplesPerPixel, m_samplesPerPixel);
     glUniform1ui(m_uLocFrame, m_frame);
