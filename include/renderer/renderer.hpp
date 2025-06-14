@@ -43,9 +43,18 @@ private:
 	GLint m_uLocSkyboxTexture;
 	GLint m_uLocHasSkybox;
 	GLint m_uLocSkyboxExposure;
+	GLint m_uLocSunDirection;
+	GLint m_uLocSunColour;
+	GLint m_uLocSunIntensity;
+	GLint m_uLocSunFocus;
 
 	Skybox m_skybox;
 	float m_skyboxExposure = 1.0f;
+
+	glm::vec3 m_sunDirection;
+	glm::vec3 m_sunColour;
+	float m_sunIntensity;
+	float m_sunFocus;
 
 	std::vector<Sphere> m_spheres;
 	GLuint m_sphereSSBO = 0;
@@ -80,6 +89,10 @@ public:
 	void setSamplesPerPixel(uint32_t samples);
 	void setSkybox(const std::string& filepath);
 	void setSkyboxExposure(float exposure);
+	void setSunDirection(glm::vec3 direction);
+	void setSunColour(glm::vec3 colour);
+	void setSunIntensity(float intensity);
+	void setSunFocus(float focus);
 
 	void onResize(uint32_t width, uint32_t height);
 	void render(const Camera& camera);

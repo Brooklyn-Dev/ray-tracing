@@ -43,6 +43,10 @@ void Renderer::setupShaders() {
     m_uLocSkyboxTexture = glGetUniformLocation(m_shaderProgram, "uSkyboxTexture");
     m_uLocHasSkybox = glGetUniformLocation(m_shaderProgram, "uHasSkybox");
     m_uLocSkyboxExposure = glGetUniformLocation(m_shaderProgram, "uSkyboxExposure");
+    m_uLocSunDirection = glGetUniformLocation(m_shaderProgram, "uSunDirection");
+    m_uLocSunColour = glGetUniformLocation(m_shaderProgram, "uSunColour");
+    m_uLocSunIntensity = glGetUniformLocation(m_shaderProgram, "uSunIntensity");
+    m_uLocSunFocus = glGetUniformLocation(m_shaderProgram, "uSunFocus");
     m_uLocNumSpheres = glGetUniformLocation(m_shaderProgram, "uNumSpheres");
     m_uLocNumPlanes = glGetUniformLocation(m_shaderProgram, "uNumPlanes");
     glUseProgram(0);
@@ -107,15 +111,6 @@ void Renderer::setupSpheres() {
         sphere.material.emissionStrength = 0.0f;
         m_spheres.push_back(sphere);
     }
-
-    // Light
-    Sphere sphereLight;
-    sphereLight.position = glm::vec3(-5.0f, 15.0f, -32.0f);
-    sphereLight.radius = 10.0f;
-    sphereLight.material.colour = glm::vec3(1.0f);
-    sphereLight.material.emissionColour = glm::vec3(1.0f);
-    sphereLight.material.emissionStrength = 4.0f;
-    m_spheres.push_back(sphereLight);
 
     // Initialise sphere buffer
     if (m_sphereSSBO == 0)
@@ -243,6 +238,34 @@ void Renderer::setSkyboxExposure(float exposure) {
     }
 }
 
+void Renderer::setSunDirection(glm::vec3 direction) {
+    if (m_sunDirection != direction) {
+        m_sunDirection = direction;
+        resetFrame();
+    }
+}
+
+void Renderer::setSunColour(glm::vec3 colour) {
+    if (m_sunColour != colour) {
+        m_sunColour = colour;
+        resetFrame();
+    }
+}
+
+void Renderer::setSunIntensity(float intensity) {
+    if (m_sunIntensity != intensity) {
+        m_sunIntensity = intensity;
+        resetFrame();
+    }
+}
+
+void Renderer::setSunFocus(float focus) {
+    if (m_sunFocus != focus) {
+        m_sunFocus = focus;
+        resetFrame();
+    }
+}
+
 GLuint Renderer::getDisplayTexture() const {
     return m_displayTexture;
 }
@@ -289,6 +312,10 @@ void Renderer::render(const Camera& camera) {
     glUniform3fv(m_uLocCameraForward, 1, glm::value_ptr(camera.forward));
     glUniform3fv(m_uLocCameraRight, 1, glm::value_ptr(camera.right));
     glUniform3fv(m_uLocCameraUp, 1, glm::value_ptr(camera.up));
+    glUniform3fv(m_uLocSunDirection, 1, glm::value_ptr(m_sunDirection));
+    glUniform3fv(m_uLocSunColour, 1, glm::value_ptr(m_sunColour));
+    glUniform1f(m_uLocSunIntensity, m_sunIntensity);
+    glUniform1f(m_uLocSunFocus, m_sunFocus);
     glUniform1f(m_uLocGamma, m_gamma);
     glUniform1ui(m_uLocMaxBounces, m_maxBounces);
     glUniform1ui(m_uLocSamplesPerPixel, m_samplesPerPixel);

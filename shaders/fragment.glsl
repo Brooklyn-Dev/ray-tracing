@@ -23,6 +23,11 @@ uniform sampler2D uSkyboxTexture;
 uniform int uHasSkybox;
 uniform float uSkyboxExposure;
 
+uniform vec3 uSunDirection;
+uniform vec3 uSunColour;
+uniform float uSunIntensity;
+uniform float uSunFocus;
+
 struct Ray {
 	vec3 origin;
 	vec3 dir;
@@ -172,34 +177,25 @@ HitInfo CalculateRayCollision(Ray ray) {
 	return closestHit;
 }
 
-vec3 CalculateLighting(HitInfo hit) {
-	const float EPSILON = 1e-3;
-	vec3 lightColour = vec3(0.0);
+// === SKYBOX / ENVIRONMENT ===
 
-	// Find all light sources
-	for (int i = 0; i < uNumSpheres; ++i) {
-		if (spheres[i].material.emissionStrength != 0.0) {
-			vec3 lightDir = normalize(spheres[i].position - hit.hitPoint);
-			float lightCentreDst = length(spheres[i].position - hit.hitPoint);
+vec3 GetEnvironmentLight(Ray ray) {
+	vec3 environmentLight = vec3(0.0);
 
-			Ray shadowRay;
-			shadowRay.origin = hit.hitPoint + hit.normal * EPSILON;
-			shadowRay.dir = lightDir;
-			
-			HitInfo shadowHit = CalculateRayCollision(shadowRay);
-
-			if (shadowHit.hit && shadowHit.dst > EPSILON && shadowHit.dst < (lightCentreDst - spheres[i].radius - EPSILON)) {
-				continue;
-			}
-
-			// Calculate lighting contribution
-			float dotProduct = max(dot(hit.normal, lightDir), 0.0);
-			lightColour += spheres[i].material.emissionColour * spheres[i].material.emissionStrength * hit.material.colour * dotProduct;
-		}
+	if (uHasSkybox == 1) {
+		vec2 uv = calculateEquirectangularUV(ray.dir);
+		environmentLight = texture(uSkyboxTexture, uv).rgb * uSkyboxExposure;
 	}
 
-	return lightColour;
+	float sunDot = max(0.0, dot(ray.dir, uSunDirection));
+	float sunSpot = pow(sunDot, uSunFocus);
+
+	environmentLight += uSunColour * uSunIntensity * sunSpot;
+
+	return environmentLight;
 }
+
+// === TRACE ===
 
 // Trace light-ray path (camera to light), accounting for reflections
 vec3 Trace(Ray ray, inout uint rngState) {
@@ -210,11 +206,7 @@ vec3 Trace(Ray ray, inout uint rngState) {
 		HitInfo hit = CalculateRayCollision(ray);
 
 		if (!hit.hit) {
-			// Environmental lighting
-			if (uHasSkybox == 1) {
-				vec3 environmentColour = texture(uSkyboxTexture, calculateEquirectangularUV(ray.dir)).rgb;
-				incomingLight += environmentColour * rayColour * uSkyboxExposure;
-			}
+			incomingLight += GetEnvironmentLight(ray) * rayColour;
 			break;
 		}
 

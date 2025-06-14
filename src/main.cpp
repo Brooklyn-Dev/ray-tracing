@@ -5,6 +5,8 @@
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_impl_glfw.h"
@@ -33,6 +35,14 @@ float g_deltaTime = 0.0f;
 float g_lastFrame = 0.0f;
 float g_cameraSpeed = 5.0f;
 float g_mouseSensitivity = 0.3f;
+
+// Sun
+glm::vec3 g_sunDirection = glm::vec3(0.0f);
+float g_sunPitch = 50.0f;
+float g_sunYaw = -30.0f;
+glm::vec3 g_sunColour = glm::vec3(1.0f, 1.0f, 0.9f);
+float g_sunIntensity = 200.0f;
+float g_sunFocus = 500.0f;
 
 // Renderer Instance
 Renderer* g_renderer = nullptr;
@@ -119,6 +129,16 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     }
 }
 
+void updateSunDirection() {
+    float pitchRad = glm::radians(g_sunPitch);
+    float yawRad = glm::radians(g_sunYaw);
+
+    g_sunDirection.x = cos(pitchRad) * cos(yawRad);
+    g_sunDirection.y = sin(pitchRad);
+    g_sunDirection.z = cos(pitchRad) * sin(yawRad);
+    g_sunDirection = glm::normalize(g_sunDirection);
+}
+
 // === RENDERER UTILITY ===
 void performRender()
 {
@@ -189,6 +209,13 @@ void setupRenderer(uint32_t initialWidth, uint32_t initialHeight) {
     static Renderer rendererInstance(initialWidth, initialHeight);
     g_renderer = &rendererInstance;
     g_renderer->onResize(initialWidth, initialHeight);
+
+    updateSunDirection();
+    g_renderer->setSunDirection(g_sunDirection);
+    g_renderer->setSunColour(g_sunColour);
+    g_renderer->setSunIntensity(g_sunIntensity);
+    g_renderer->setSunFocus(g_sunFocus);
+
     performRender();
 }
 
@@ -229,41 +256,17 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
     ImGui::Begin("Settings");
 
     // Performance / Debug
-    ImGui::Text("Last render: %.3fms", g_lastRenderTime);
-    ImGui::Text("Frame number: %.1f", (float)g_renderer->getFrame());
-    ImGui::Text("Application FPS: %.1f", io.Framerate);
-    ImGui::Text("Viewport size: %dx%d", g_viewportWidth, g_viewportHeight);
+    if (ImGui::CollapsingHeader("Performance/Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Text("Last render: %.3fms", g_lastRenderTime);
+        ImGui::Text("Frame number: %.1f", (float)g_renderer->getFrame());
+        ImGui::Text("Application FPS: %.1f", io.Framerate);
+        ImGui::Text("Viewport size: %dx%d", g_viewportWidth, g_viewportHeight);
+    }
     ImGui::Separator();
 
-    // Rendering Parameters
-    if (ImGui::CollapsingHeader("Renderer Settings")) {
-
-        ImGui::Text("Skybox Texture:");
-
-        if (ImGui::Button("Browse...")) {
-            IGFD::FileDialogConfig config;
-            config.path = "./skyboxes";
-            ImGuiFileDialog::Instance()->OpenDialog("ChooseSkyboxFile", "Choose Skybox", ".hdr", config);
-        }
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Clear Skybox"))
-            if (g_renderer)
-                g_renderer->setSkybox("");
-
-        ImGui::PushItemWidth(-1);  // Sliders fill available width
-
-        ImGui::Text("Skybox Exposure (EV):");
-        static float skyboxExposureEV = 0.0f;
-        if (ImGui::SliderFloat("##SkyboxExposureEV", &skyboxExposureEV, -5.0f, 5.0f)) {
-            float linearExposure = powf(2.0f, skyboxExposureEV);
-            g_renderer->setSkyboxExposure(linearExposure);
-        }
-
-        ImGui::PopItemWidth();
-
-        ImGui::PushItemWidth(-1);  // Sliders fill available width
+    // Renderer Core Settings
+    if (ImGui::CollapsingHeader("Path Tracing", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushItemWidth(-1); // Sliders fill available width
 
         ImGui::Text("Gamma:");
         static float gamma = 2.2;
@@ -277,29 +280,74 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
 
         ImGui::Text("Samples Per Pixel:");
         static int ssp = 1;
-        if (ImGui::SliderInt("##Samples Per Pixel", &ssp, 1, 128))
+        if (ImGui::SliderInt("##Samples PerPixel", &ssp, 1, 128))
             g_renderer->setSamplesPerPixel(ssp);
 
         ImGui::PopItemWidth();
     }
     ImGui::Separator();
 
+    // Environment Settings
+    if (ImGui::CollapsingHeader("Environment (Skybox/Sun)", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Text("Skybox Texture:");
+        if (ImGui::Button("Browse Skybox...")) {
+            IGFD::FileDialogConfig config;
+            config.path = "./skyboxes";
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseSkyboxFile", "Choose Skybox", ".hdr", config);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Clear Skybox"))
+            if (g_renderer)
+                g_renderer->setSkybox("");
+
+        ImGui::PushItemWidth(-1);
+        ImGui::Text("Skybox Exposure (EV):");
+        static float skyboxExposureEV = 0.0f;
+        if (ImGui::SliderFloat("##SkyboxExposureEV", &skyboxExposureEV, -5.0f, 5.0f, "%.2f")) {
+            float linearExposure = powf(2.0f, skyboxExposureEV);
+            g_renderer->setSkyboxExposure(linearExposure);
+        }
+
+        ImGui::Text("Sun Pitch:");
+        if (ImGui::SliderFloat("##Pitch", &g_sunPitch, -180.0f, 180.0f)) {
+            updateSunDirection();
+            g_renderer->setSunDirection(g_sunDirection);
+        }
+        ImGui::Text("Sun Yaw:");
+        if (ImGui::SliderFloat("##Yaw", &g_sunYaw, -360.0f, 360.0f)) {
+            updateSunDirection();
+            g_renderer->setSunDirection(g_sunDirection);
+        }
+        ImGui::PopItemWidth();
+
+        ImGui::Text("Sun Colour:");
+        if (ImGui::ColorEdit3("##Sun Colour", glm::value_ptr(g_sunColour)))
+            g_renderer->setSunColour(g_sunColour);
+
+        ImGui::PushItemWidth(-1);
+        ImGui::Text("Sun Intensity:");
+        if (ImGui::SliderFloat("##SunIntensity", &g_sunIntensity, 0, 1000, "%.0f"))
+            g_renderer->setSunIntensity(g_sunIntensity);
+        ImGui::Text("Sun Focus:");
+        if (ImGui::SliderFloat("##SunFocus", &g_sunFocus, 0, 1000, "%.0f"))
+            g_renderer->setSunFocus(g_sunFocus);
+        ImGui::PopItemWidth();
+    }
+    ImGui::Separator();
+
     // Camera Controls
-    if (ImGui::CollapsingHeader("Camera Controls")) {
-        // Camera Position
+    if (ImGui::CollapsingHeader("Camera Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("Position:");
         ImGui::Indent();
         ImGui::Text("X: %.2f  Y: %.2f  Z: %.2f", g_camera.position.x, g_camera.position.y, g_camera.position.z);
         ImGui::Unindent();
 
-        // Camera Orientation
         ImGui::Text("Orientation:");
         ImGui::Indent();
-        ImGui::Text("Yaw: %.1f  Pitch: %.1f", g_camera.yaw, g_camera.pitch);
+        ImGui::Text("Pitch: %.1f  Yaw: %.1f", g_camera.pitch, g_camera.yaw);
         ImGui::Unindent();
 
-        ImGui::PushItemWidth(-1);  // Sliders fill available width
-
+        ImGui::PushItemWidth(-1);
         ImGui::Text("Camera Speed:");
         ImGui::SliderFloat("##Camera Speed", &g_cameraSpeed, 0.1f, 10.0f, "%.1f");
 
