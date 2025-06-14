@@ -33,12 +33,17 @@ struct Ray {
 	vec3 dir;
 };
 
+const int FLAG_CHECKERBOARD = 1;
+
 struct Material {
 	vec3 colour;
-	float _pad0;
+	float smoothness;
 
 	vec3 emissionColour;
 	float emissionStrength;
+
+	vec3 specularColour;
+	int flag;
 };
 
 struct Sphere {
@@ -209,16 +214,29 @@ vec3 Trace(Ray ray, inout uint rngState) {
 			incomingLight += GetEnvironmentLight(ray) * rayColour;
 			break;
 		}
+		
+		Material material = hit.material;
+
+		if (material.flag == FLAG_CHECKERBOARD) {
+			float x = hit.hitPoint.x;
+			float z = hit.hitPoint.z;
+
+			int ix = int(floor(x));
+			int iz = int(floor(z));
+
+			bool isEvenSquare = (ix % 2 == iz % 2);
+			material.colour = isEvenSquare ? material.colour : material.emissionColour;
+		}
 
 		// Calculate next ray
 		ray.origin = hit.hitPoint + hit.normal * 0.0001;
 
-		vec3 dir = normalize(hit.normal + RandomUnitVector(rngState));
-		if (dot(dir, hit.normal) < 0.0) dir = -dir;
-		ray.dir = dir;
+		vec3 diffuseDir = normalize(hit.normal + RandomUnitVector(rngState));
+		if (dot(diffuseDir, hit.normal) < 0.0) diffuseDir = -diffuseDir;
+		vec3 specularDir = reflect(ray.dir, hit.normal);
+		ray.dir = normalize(mix(diffuseDir, specularDir, material.smoothness));
 
 		// Accumulate light
-		Material material = hit.material;
 		incomingLight += material.emissionColour * material.emissionStrength * rayColour;
 		rayColour *= material.colour;
 

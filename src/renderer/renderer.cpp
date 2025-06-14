@@ -84,31 +84,21 @@ void Renderer::setupQuad() {
 void Renderer::setupSpheres() {
     m_spheres.clear();
 
-    const glm::vec3 colours[] = {
-        glm::vec3(1.0f, 0.0f, 0.0f),  // Red
-        glm::vec3(0.0f, 1.0f, 0.0f),  // Green  
-        glm::vec3(0.0f, 0.0f, 1.0f)   // Blue
-    };
-
-    const float gap = 0.5f;
-    const float baseRadius = 0.5f;
-    const float radiusInc = 0.5f;
-
-    float currentX = 0;
-
-    for (int i = 0; i < 3; ++i) {
+    float currentX = -7.5;
+    for (int i = 1; i < 6; ++i) {
         Sphere sphere;
-        sphere.radius = baseRadius + i * radiusInc;
+        sphere.radius = 1.0f;
 
-        if (i > 0) {
-            float prevRadius = baseRadius + (i - 1) * radiusInc;
-            currentX += prevRadius + gap + sphere.radius;
-        }
+        if (i > 0)
+            currentX += 2.5f;
 
-        sphere.position = glm::vec3(currentX, 1.5f - (2 - i) * radiusInc, -3.0f);
-        sphere.material.colour = colours[i];
+        sphere.position = glm::vec3(currentX, 1.0f, -3.0f);
+        sphere.material.colour = glm::vec3(1.0f);
+        sphere.material.smoothness = i * 0.2;
         sphere.material.emissionColour = glm::vec3(0.0f);
         sphere.material.emissionStrength = 0.0f;
+        sphere.material.specularColour = glm::vec3(1.0f);
+        sphere.material.flag = FLAG_NONE;
         m_spheres.push_back(sphere);
     }
 
@@ -137,8 +127,11 @@ void Renderer::setupPlanes() {
     plane.position = glm::vec3(0.0f);
     plane.normal = glm::vec3(0.0f, 1.0f, 0.0f);
     plane.material.colour = glm::vec3(1.0f);
+    plane.material.smoothness = 0.0f;
     plane.material.emissionColour = glm::vec3(0.0f);
     plane.material.emissionStrength = 0.0f;
+    plane.material.specularColour = glm::vec3(1.0f);
+    plane.material.flag = FLAG_CHECKERBOARD;
     m_planes.push_back(plane);
 
     // Initialise plane buffer
