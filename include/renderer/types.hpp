@@ -16,6 +16,11 @@ struct alignas(16) Material {
 
 	glm::vec3 specularColour;
 	int flag;
+
+	float specularProbability;
+	float _pad0;
+	float _pad1;
+	float _pad2;
 };
 
 struct alignas(16) Sphere {

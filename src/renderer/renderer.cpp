@@ -84,6 +84,8 @@ void Renderer::setupQuad() {
 void Renderer::setupSpheres() {
     m_spheres.clear();
 
+    float specularProbabilities[5] = { 1, 0.6, 0.4, 0.15, 0.02 };
+
     float currentX = -7.5;
     for (int i = 1; i < 6; ++i) {
         Sphere sphere;
@@ -94,10 +96,11 @@ void Renderer::setupSpheres() {
 
         sphere.position = glm::vec3(currentX, 1.0f, -3.0f);
         sphere.material.colour = glm::vec3(1.0f);
-        sphere.material.smoothness = i * 0.2;
+        sphere.material.smoothness = 1.0f;
         sphere.material.emissionColour = glm::vec3(0.0f);
         sphere.material.emissionStrength = 0.0f;
         sphere.material.specularColour = glm::vec3(1.0f);
+        sphere.material.specularProbability = specularProbabilities[i - 1];
         sphere.material.flag = FLAG_NONE;
         m_spheres.push_back(sphere);
     }
@@ -131,6 +134,7 @@ void Renderer::setupPlanes() {
     plane.material.emissionColour = glm::vec3(0.0f);
     plane.material.emissionStrength = 0.0f;
     plane.material.specularColour = glm::vec3(1.0f);
+    plane.material.specularProbability = 0.0f;
     plane.material.flag = FLAG_CHECKERBOARD;
     m_planes.push_back(plane);
 

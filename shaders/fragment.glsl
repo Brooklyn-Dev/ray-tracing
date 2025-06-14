@@ -44,6 +44,11 @@ struct Material {
 
 	vec3 specularColour;
 	int flag;
+
+	float specularProbability;
+	float _pad0;
+	float _pad1;
+	float _pad2;
 };
 
 struct Sphere {
@@ -227,18 +232,24 @@ vec3 Trace(Ray ray, inout uint rngState) {
 			bool isEvenSquare = (ix % 2 == iz % 2);
 			material.colour = isEvenSquare ? material.colour : material.emissionColour;
 		}
+		
+		// Accumulate light
+		incomingLight += material.emissionColour * material.emissionStrength * rayColour;
 
 		// Calculate next ray
 		ray.origin = hit.hitPoint + hit.normal * 0.0001;
 
-		vec3 diffuseDir = normalize(hit.normal + RandomUnitVector(rngState));
-		if (dot(diffuseDir, hit.normal) < 0.0) diffuseDir = -diffuseDir;
-		vec3 specularDir = reflect(ray.dir, hit.normal);
-		ray.dir = normalize(mix(diffuseDir, specularDir, material.smoothness));
-
-		// Accumulate light
-		incomingLight += material.emissionColour * material.emissionStrength * rayColour;
-		rayColour *= material.colour;
+		bool isSpecular = material.specularProbability >= RandomValue(rngState);
+		if (isSpecular) {
+			vec3 specularDir = reflect(ray.dir, hit.normal);
+            ray.dir = specularDir;
+			rayColour *= material.specularColour;
+		} else {
+			vec3 diffuseDir = normalize(hit.normal + RandomUnitVector(rngState));
+			if (dot(diffuseDir, hit.normal) < 0.0) diffuseDir = -diffuseDir;
+            ray.dir = diffuseDir;
+			rayColour *= material.colour;
+		}
 
 		// "Russian roulette" to exit early if rayColour is nearly 0 (little contribution)
 		float p = max(rayColour.r, max(rayColour.g, rayColour.b));

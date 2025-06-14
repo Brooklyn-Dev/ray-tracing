@@ -72,11 +72,12 @@
     -   **Ray Colour Accumulation:**
         -   Colour is accumulated as a ray bounces
         -   The ray's colour is attenuated by the material's colour, simulating how the surface absorbs some light and reflects the rest
-        -   `rayColour *= material.colour;`
+        -   Diffuse bounce: `rayColour *= material.colour;`
+        -   Specular bounce: `rayColour *= material.specularColour;`
     -   **Diffuse Reflection Sampling:**
         -   For diffuse surfaces, light is scattered in all directions
         -   Cosine-weighted hemisphere sampling is used to bias samples towards the normal, improving convergence
-        -   `vec3 dir = normalize(hit.normal + RandomUnitVector(rngState));`
+        -   `vec3 diffuseDir = normalize(hit.normal + RandomUnitVector(rngState));`
     -   **Specular Reflection:**
         -   Occurs on smooth, polished surfaces, reflecting light in a single, concentrated direction
         -   ReflectedDir = LightDir - 2 × (LightDir · Normal) × Normal
