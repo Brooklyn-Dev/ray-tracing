@@ -262,9 +262,6 @@ vec3 Trace(Ray ray, inout uint rngState) {
 }
 
 void main() {
-	vec2 uv = vUV * 2.0 - 1.0;  // Normalise uv to [-1,1]
-	uv.x *= uResolution.x / uResolution.y;
-
 	// RNG seed
 	ivec2 pixelCoords = ivec2(gl_FragCoord.xy);
 	uint pixelIndex = uint(pixelCoords.y) * uint(uResolution.x) + uint(pixelCoords.x);
@@ -275,10 +272,14 @@ void main() {
 	for (uint s = 0; s < uSamplesPerPixel; ++s) {        
 		uint sampleRngState = PCG_Hash(rngState + s * 131071u);
 
+        vec2 jitteredScreenUV = (gl_FragCoord.xy + vec2(RandomValue(sampleRngState), RandomValue(sampleRngState))) / uResolution;
+        vec2 jitteredUV = jitteredScreenUV * 2.0 - 1.0; // Convert [0,1] to [-1,1]
+	    jitteredUV.x *= uResolution.x / uResolution.y;
+
 	    // Path Tracing
 		Ray ray;
 		ray.origin = uCameraPosition;
-		ray.dir = normalize(uCameraForward + uv.x * uCameraRight + uv.y * uCameraUp);
+		ray.dir = normalize(uCameraForward + jitteredUV.x * uCameraRight + jitteredUV.y * uCameraUp);
 
 		vec3 incomingLight = Trace(ray, sampleRngState);
 
