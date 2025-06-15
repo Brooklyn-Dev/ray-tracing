@@ -48,6 +48,7 @@ void Renderer::setupShaders() {
     m_uLocSunFocus = glGetUniformLocation(m_shaderProgram, "uSunFocus");
     m_uLocNumSpheres = glGetUniformLocation(m_shaderProgram, "uNumSpheres");
     m_uLocNumPlanes = glGetUniformLocation(m_shaderProgram, "uNumPlanes");
+    m_uLocNumQuads = glGetUniformLocation(m_shaderProgram, "uNumQuads");
     glUseProgram(0);
 }
 
@@ -114,6 +115,24 @@ void Renderer::uploadPlanes(const std::vector<Plane>& planes) {
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, planes.size() * sizeof(Plane), planes.data());
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     glUniform1i(m_uLocNumPlanes, (GLint)planes.size());
+}
+
+void Renderer::setupQuads() {
+    // Initialise quad buffer
+    if (m_quadSSBO == 0)
+        glGenBuffers(1, &m_quadSSBO);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_quadSSBO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, m_quads.size() * sizeof(Quad), nullptr, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, m_quadSSBO);  // binding = 2
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void Renderer::uploadQuads(const std::vector<Quad>& quads) {
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_quadSSBO);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, quads.size() * sizeof(Quad), quads.data());
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glUniform1i(m_uLocNumQuads, (GLint)quads.size());
 }
 
 void Renderer::createTexturesAndFBO(uint32_t width, uint32_t height) {
@@ -266,6 +285,7 @@ void Renderer::render(const Camera& camera) {
     glUniform2f(m_uLocResolution, (float)m_width, (float)m_height);
     uploadSpheres(m_spheres);
     uploadPlanes(m_planes);
+    uploadQuads(m_quads);
     glUniform3fv(m_uLocCameraPos, 1, glm::value_ptr(camera.position));
     glUniform3fv(m_uLocCameraForward, 1, glm::value_ptr(camera.forward));
     glUniform3fv(m_uLocCameraRight, 1, glm::value_ptr(camera.right));
@@ -314,6 +334,8 @@ void Renderer::loadScene(const Scene& scene) {
     setupSpheres();
     m_planes = scene.planes;
     setupPlanes();
+    m_quads = scene.quads;
+    setupQuads();
 
     setGamma(scene.gamma);
     setMaxBounces(scene.maxBounces);

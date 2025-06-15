@@ -65,11 +65,16 @@ private:
 	GLuint m_planeSSBO = 0;
 	GLint m_uLocNumPlanes;
 
+	std::vector<Quad> m_quads;
+	GLuint m_quadSSBO = 0;
+	GLint m_uLocNumQuads;
+
 	void setupShaders();
 	void setupQuad();
 
 	void setupSpheres();
 	void setupPlanes();
+	void setupQuads();
 
 	void createTexturesAndFBO(uint32_t width, uint32_t height);
 
@@ -83,6 +88,7 @@ public:
 
 	void uploadSpheres(const std::vector<Sphere>& spheres);
 	void uploadPlanes(const std::vector<Plane>& planes);
+	void uploadQuads(const std::vector<Quad>& quads);
 
 	GLuint getDisplayTexture() const;
 	uint32_t getFrame() const;

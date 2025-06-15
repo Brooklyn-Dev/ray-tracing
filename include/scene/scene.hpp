@@ -13,6 +13,7 @@ struct Scene {
 
     std::vector<Sphere> spheres;
     std::vector<Plane> planes;
+    std::vector<Quad> quads;
 
     float gamma = 2.2f;
     int maxBounces = 2;

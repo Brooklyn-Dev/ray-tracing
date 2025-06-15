@@ -39,3 +39,19 @@ struct alignas(16) Plane {
 
 	Material material;
 };
+
+struct alignas(16) Quad {
+	glm::vec3 position;
+	float width;
+
+	glm::vec3 normal;
+	float height;
+
+	glm::vec3 right;
+	float _pad0;
+
+	glm::vec3 up;
+	float _pad1;
+
+	Material material;
+};

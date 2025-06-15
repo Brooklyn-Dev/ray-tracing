@@ -47,6 +47,7 @@ namespace SceneLoader {
         // Clear existing scene
         scene.spheres.clear();
         scene.planes.clear();
+        scene.quads.clear();
 
         // Parse Tracing
         if (j.contains("tracing")) {
@@ -95,6 +96,20 @@ namespace SceneLoader {
                 p.normal = parseVec3(j_plane.at("normal"));
                 p.material = parseMaterial(j_plane.at("material"));
                 scene.planes.push_back(p);
+            }
+
+        // Parse Quads
+        if (j.contains("quads") && j.at("quads").is_array())
+            for (const auto& j_quad : j.at("quads")) {
+                Quad q;
+                q.position = parseVec3(j_quad.at("position"));
+                q.width = j_quad.at("width");
+                q.normal = parseVec3(j_quad.at("normal"));
+                q.height = j_quad.at("height");
+                q.right = parseVec3(j_quad.at("right"));
+                q.up = parseVec3(j_quad.at("up"));
+                q.material = parseMaterial(j_quad.at("material"));
+                scene.quads.push_back(q);
             }
 
         std::cout << "Scene '" << j.value("name", "Unknown Scene") << "' loaded successfully." << std::endl;

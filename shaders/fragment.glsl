@@ -54,14 +54,33 @@ struct Material {
 struct Sphere {
 	vec3 position;
 	float radius;
+
 	Material material;
 };
 
 struct Plane {
 	vec3 position;
 	float _pad0;
+
 	vec3 normal;
 	float _pad1;
+
+	Material material;
+};
+
+struct Quad {
+	vec3 position;
+	float width;
+
+	vec3 normal;
+	float height;
+	
+	vec3 right;
+	float _pad0;
+
+	vec3 up;
+	float _pad1;
+
 	Material material;
 };
 
@@ -75,9 +94,11 @@ struct HitInfo {
 
 layout(std430, binding = 0) readonly buffer Spheres { Sphere spheres[]; };
 layout(std430, binding = 1) readonly buffer Planes { Plane planes[]; };
+layout(std430, binding = 2) readonly buffer Quads { Quad _quads[]; };
 
 uniform int uNumSpheres;
 uniform int uNumPlanes;
+uniform int uNumQuads;
 
 // === SKYBOX ===
 vec2 calculateEquirectangularUV(vec3 dir) {
@@ -167,6 +188,34 @@ HitInfo RayPlaneIntersect(Ray ray, Plane plane) {
 	return hit;
 }
 
+HitInfo RayQuadIntersect(Ray ray, Quad quad) {
+	HitInfo hit;
+    hit.hit = false;
+    hit.dst = 1e20;
+
+	float denominator = dot(quad.normal, ray.dir);
+	if (denominator < 0.0) {
+		hit.hit = true;
+		hit.dst = dot(quad.normal, quad.position - ray.origin) / denominator;
+		hit.hitPoint = ray.origin + ray.dir * hit.dst;
+		hit.normal = quad.normal;
+		hit.material = quad.material;
+
+		vec3 localHitPoint =  hit.hitPoint - quad.position;
+
+		float u = dot(localHitPoint, quad.right);
+		float v = dot(localHitPoint, quad.up);
+
+		float halfWidth = quad.width * 0.5;
+		float halfHeight = quad.height * 0.5;
+
+		if (u < -halfWidth || u > halfWidth || v < -halfHeight || v > halfHeight) 
+			hit.hit = false;
+	}
+
+	return hit;
+}
+
 HitInfo CalculateRayCollision(Ray ray) {
 	HitInfo closestHit;
 	closestHit.hit = false;
@@ -180,6 +229,12 @@ HitInfo CalculateRayCollision(Ray ray) {
 	
 	for (int i = 0; i < uNumPlanes; ++i) {
 		HitInfo currentHit = RayPlaneIntersect(ray, planes[i]);
+		if (currentHit.hit && currentHit.dst > 0.0 && currentHit.dst < closestHit.dst)
+			closestHit = currentHit;	
+	}
+	
+	for (int i = 0; i < uNumQuads; ++i) {
+		HitInfo currentHit = RayQuadIntersect(ray, _quads[i]);
 		if (currentHit.hit && currentHit.dst > 0.0 && currentHit.dst < closestHit.dst)
 			closestHit = currentHit;	
 	}
@@ -197,10 +252,11 @@ vec3 GetEnvironmentLight(Ray ray) {
 		environmentLight = texture(uSkyboxTexture, uv).rgb * uSkyboxExposure;
 	}
 
-	float sunDot = max(0.0, dot(ray.dir, uSunDirection));
-	float sunSpot = pow(sunDot, uSunFocus);
-
-	environmentLight += uSunColour * uSunIntensity * sunSpot;
+	if (uSunIntensity > 0.0 && uSunFocus > 0.0) {
+		float sunDot = max(0.0, dot(ray.dir, uSunDirection));
+		float sunSpot = pow(sunDot, uSunFocus);
+		environmentLight += uSunColour * uSunIntensity * sunSpot;
+	}
 
 	return environmentLight;
 }
