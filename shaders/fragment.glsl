@@ -242,7 +242,7 @@ vec3 Trace(Ray ray, inout uint rngState) {
 		bool isSpecular = material.specularProbability >= RandomValue(rngState);
 		if (isSpecular) {
 			vec3 specularDir = reflect(ray.dir, hit.normal);
-            ray.dir = specularDir;
+			ray.dir = normalize(specularDir + RandomUnitVector(rngState) * (1.0 - material.smoothness));
 			rayColour *= material.specularColour;
 		} else {
 			vec3 diffuseDir = normalize(hit.normal + RandomUnitVector(rngState));

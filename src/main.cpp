@@ -1,6 +1,7 @@
 ﻿#define IMGUI_ENABLE_DOCKING
 
 #include <iostream>
+#include <string>
 
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
@@ -16,6 +17,8 @@
 
 #include "camera\camera.hpp"
 #include "renderer\renderer.hpp"
+#include "scene\scene.hpp"
+#include "scene\scene_loader.hpp"
 
 // === GLOBALS ===
 // Window and Rendering State
@@ -26,8 +29,15 @@ uint32_t g_viewportHeight = 0;
 bool g_viewportFocused = false;
 bool g_viewportHovered = false;
 
+Scene g_scene;
+
+// Tracing
+float& g_gamma = g_scene.gamma;
+int& g_maxBounces = g_scene.maxBounces;
+int& g_samplesPerPixel = g_scene.samplesPerPixel;
+
 // Camera and Input
-Camera g_camera;
+Camera& g_camera = g_scene.camera;
 double g_lastX = g_windowWidth / 2.0;
 double g_lastY = g_windowHeight / 2.0;
 bool g_mouseHeld = false;
@@ -37,12 +47,13 @@ float g_cameraSpeed = 5.0f;
 float g_mouseSensitivity = 0.3f;
 
 // Sun
-glm::vec3 g_sunDirection = glm::vec3(0.0f);
-float g_sunPitch = 50.0f;
-float g_sunYaw = -30.0f;
-glm::vec3 g_sunColour = glm::vec3(1.0f, 1.0f, 0.9f);
-float g_sunIntensity = 200.0f;
-float g_sunFocus = 500.0f;
+float& g_sunYaw = g_scene.sunYaw;
+float& g_sunPitch = g_scene.sunPitch;
+glm::vec3& g_sunColour = g_scene.sunColour;
+float& g_sunIntensity = g_scene.sunIntensity;
+float& g_sunFocus = g_scene.sunFocus;
+
+float& g_skyboxExposureEV = g_scene.skyboxExposureEV;
 
 // Renderer Instance
 Renderer* g_renderer = nullptr;
@@ -129,14 +140,12 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     }
 }
 
-void updateSunDirection() {
-    float pitchRad = glm::radians(g_sunPitch);
-    float yawRad = glm::radians(g_sunYaw);
-
-    g_sunDirection.x = cos(pitchRad) * cos(yawRad);
-    g_sunDirection.y = sin(pitchRad);
-    g_sunDirection.z = cos(pitchRad) * sin(yawRad);
-    g_sunDirection = glm::normalize(g_sunDirection);
+void loadScene(const std::string& filename, GLFWwindow* window) {
+    if (SceneLoader::loadScene(filename, g_scene)) {
+        if (g_scene.name.size() > 0)
+            glfwSetWindowTitle(window, ("Ray Tracer - " + g_scene.name).c_str());
+        g_renderer->loadScene(g_scene);
+    }
 }
 
 // === RENDERER UTILITY ===
@@ -209,13 +218,6 @@ void setupRenderer(uint32_t initialWidth, uint32_t initialHeight) {
     static Renderer rendererInstance(initialWidth, initialHeight);
     g_renderer = &rendererInstance;
     g_renderer->onResize(initialWidth, initialHeight);
-
-    updateSunDirection();
-    g_renderer->setSunDirection(g_sunDirection);
-    g_renderer->setSunColour(g_sunColour);
-    g_renderer->setSunIntensity(g_sunIntensity);
-    g_renderer->setSunFocus(g_sunFocus);
-
     performRender();
 }
 
@@ -242,6 +244,12 @@ void setupImGuiDockingLayout(ImGuiID dockspace_id, ImVec2 viewportSize) {
 void renderImGuiMenuBar(GLFWwindow* window) {
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Load Scene")) {
+                IGFD::FileDialogConfig config;
+                config.path = "./scenes";
+                ImGuiFileDialog::Instance()->OpenDialog("ChooseSceneFile", "Choose Scene", ".json", config);
+            }
+
             if (ImGui::MenuItem("Exit", "Alt+F4"))
                 glfwSetWindowShouldClose(window, true);
 
@@ -269,19 +277,16 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
         ImGui::PushItemWidth(-1); // Sliders fill available width
 
         ImGui::Text("Gamma:");
-        static float gamma = 2.2;
-        if (ImGui::SliderFloat("##Gamma", &gamma, 1.8, 2.8, "%.2f"))
-            g_renderer->setGamma(gamma);
+        if (ImGui::SliderFloat("##Gamma", &g_gamma, 1.8, 2.8, "%.2f"))
+            g_renderer->setGamma(g_gamma);
 
         ImGui::Text("Max Bounces:");
-        static int maxBounces = 2;
-        if (ImGui::SliderInt("##Max Bounces", &maxBounces, 1, 32))
-            g_renderer->setMaxBounces(maxBounces);
+        if (ImGui::SliderInt("##Max Bounces", &g_maxBounces, 1, 32))
+            g_renderer->setMaxBounces(g_maxBounces);
 
         ImGui::Text("Samples Per Pixel:");
-        static int ssp = 1;
-        if (ImGui::SliderInt("##Samples PerPixel", &ssp, 1, 128))
-            g_renderer->setSamplesPerPixel(ssp);
+        if (ImGui::SliderInt("##Samples Per Pixel", &g_samplesPerPixel, 1, 128))
+            g_renderer->setSamplesPerPixel(g_samplesPerPixel);
 
         ImGui::PopItemWidth();
     }
@@ -302,22 +307,18 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
 
         ImGui::PushItemWidth(-1);
         ImGui::Text("Skybox Exposure (EV):");
-        static float skyboxExposureEV = 0.0f;
-        if (ImGui::SliderFloat("##SkyboxExposureEV", &skyboxExposureEV, -5.0f, 5.0f, "%.2f")) {
-            float linearExposure = powf(2.0f, skyboxExposureEV);
+        if (ImGui::SliderFloat("##SkyboxExposureEV", &g_skyboxExposureEV, -5.0f, 5.0f, "%.2f")) {
+            float linearExposure = powf(2.0f, g_skyboxExposureEV);
             g_renderer->setSkyboxExposure(linearExposure);
         }
 
         ImGui::Text("Sun Pitch:");
-        if (ImGui::SliderFloat("##Pitch", &g_sunPitch, -180.0f, 180.0f)) {
-            updateSunDirection();
-            g_renderer->setSunDirection(g_sunDirection);
-        }
+        if (ImGui::SliderFloat("##Pitch", &g_sunPitch, -180.0f, 180.0f))
+            g_renderer->setSunDirection(g_scene.getSunDirection());
         ImGui::Text("Sun Yaw:");
-        if (ImGui::SliderFloat("##Yaw", &g_sunYaw, -360.0f, 360.0f)) {
-            updateSunDirection();
-            g_renderer->setSunDirection(g_sunDirection);
-        }
+        if (ImGui::SliderFloat("##Yaw", &g_sunYaw, -360.0f, 360.0f))
+            g_renderer->setSunDirection(g_scene.getSunDirection());
+
         ImGui::PopItemWidth();
 
         ImGui::Text("Sun Colour:");
@@ -362,7 +363,7 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
 }
 
 void renderImGuiViewportWindow() {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f)); // No padding for viewport
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("Viewport");
 
     ImVec2 viewportSize = ImGui::GetContentRegionAvail(); // Get available space
@@ -414,6 +415,8 @@ int main() {
     setupImGui(window);
 
     setupRenderer(g_windowWidth, g_windowHeight);
+
+    loadScene("scenes/specular_1.json", window);
 
     // Main app loop
     while (!glfwWindowShouldClose(window)) {
@@ -469,13 +472,18 @@ int main() {
         renderImGuiSettingsWindow(io);
         renderImGuiViewportWindow();
 
+        if (ImGuiFileDialog::Instance()->Display("ChooseSceneFile")) {
+            if (ImGuiFileDialog::Instance()->IsOk()) {
+                std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+                if (g_renderer)
+                    loadScene(filePath, window);
+            }
+            ImGuiFileDialog::Instance()->Close();
+        }
+
         if (ImGuiFileDialog::Instance()->Display("ChooseSkyboxFile")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
                 std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
-
-                strncpy(g_skyboxPathBuffer, filePath.c_str(), sizeof(g_skyboxPathBuffer) - 1);
-                g_skyboxPathBuffer[sizeof(g_skyboxPathBuffer) - 1] = '\0';
-
                 if (g_renderer)
                     g_renderer->setSkybox(filePath);
             }   

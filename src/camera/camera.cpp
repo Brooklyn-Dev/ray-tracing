@@ -1,9 +1,9 @@
 #include "camera/camera.hpp"
 
 Camera::Camera()
-	: position(0.0f, 2.4f, 2.35f),
+	: position(0.0f, 2.0f, 0.0f),
 	  yaw(-90.0f),
-	  pitch(-15.0f)
+	  pitch(0.0f)
 {
 	updateOrientation();
 }

@@ -98,6 +98,7 @@ target_include_directories(${PROJECT_NAME}
         external/imgui/backends
         external/stb
         external/imfiledialog
+        external/json
 )
 
 # Set output directory
@@ -119,4 +120,12 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/skyboxes
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/skyboxes
+)
+
+# Copy scenes to output directory
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/scenes
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/scenes
 )

@@ -6,6 +6,7 @@
 
 #include "camera/camera.hpp"
 #include "renderer/renderer.hpp"
+#include "scene/scene.hpp"
 #include "utils/io.hpp"
 #include "utils/shader.hpp"
 
@@ -13,8 +14,6 @@ Renderer::Renderer(uint32_t width, uint32_t height)
 	: m_width(width), m_height(height) {
 	setupShaders();
 	setupQuad();
-    setupSpheres();
-    setupPlanes();
 
     createTexturesAndFBO(width, height);
     resetFrame();
@@ -82,29 +81,6 @@ void Renderer::setupQuad() {
 }
 
 void Renderer::setupSpheres() {
-    m_spheres.clear();
-
-    float specularProbabilities[5] = { 1, 0.6, 0.4, 0.15, 0.02 };
-
-    float currentX = -7.5;
-    for (int i = 1; i < 6; ++i) {
-        Sphere sphere;
-        sphere.radius = 1.0f;
-
-        if (i > 0)
-            currentX += 2.5f;
-
-        sphere.position = glm::vec3(currentX, 1.0f, -3.0f);
-        sphere.material.colour = glm::vec3(1.0f);
-        sphere.material.smoothness = 1.0f;
-        sphere.material.emissionColour = glm::vec3(0.0f);
-        sphere.material.emissionStrength = 0.0f;
-        sphere.material.specularColour = glm::vec3(1.0f);
-        sphere.material.specularProbability = specularProbabilities[i - 1];
-        sphere.material.flag = FLAG_NONE;
-        m_spheres.push_back(sphere);
-    }
-
     // Initialise sphere buffer
     if (m_sphereSSBO == 0)
         glGenBuffers(1, &m_sphereSSBO);
@@ -123,21 +99,6 @@ void Renderer::uploadSpheres(const std::vector<Sphere>& spheres) {
 }
 
 void Renderer::setupPlanes() {
-    m_planes.clear();
-
-    // Ground
-    Plane plane;
-    plane.position = glm::vec3(0.0f);
-    plane.normal = glm::vec3(0.0f, 1.0f, 0.0f);
-    plane.material.colour = glm::vec3(1.0f);
-    plane.material.smoothness = 0.0f;
-    plane.material.emissionColour = glm::vec3(0.0f);
-    plane.material.emissionStrength = 0.0f;
-    plane.material.specularColour = glm::vec3(1.0f);
-    plane.material.specularProbability = 0.0f;
-    plane.material.flag = FLAG_CHECKERBOARD;
-    m_planes.push_back(plane);
-
     // Initialise plane buffer
     if (m_planeSSBO == 0)
         glGenBuffers(1, &m_planeSSBO);
@@ -346,6 +307,27 @@ void Renderer::render(const Camera& camera) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     m_frame++;
+}
+
+void Renderer::loadScene(const Scene& scene) {
+    m_spheres = scene.spheres;
+    setupSpheres();
+    m_planes = scene.planes;
+    setupPlanes();
+
+    setGamma(scene.gamma);
+    setMaxBounces(scene.maxBounces);
+    setSamplesPerPixel(scene.samplesPerPixel);
+
+    setSkybox(scene.skyboxPath);
+    setSkyboxExposure(scene.getSkyboxExposure());
+
+    setSunDirection(scene.getSunDirection());
+    setSunColour(scene.sunColour);
+    setSunIntensity(scene.sunIntensity);
+    setSunFocus(scene.sunFocus);
+
+    resetFrame();
 }
 
 void Renderer::resetFrame() {

@@ -8,6 +8,7 @@
 #include "types.hpp"
 
 struct Camera;
+struct Scene;
 
 class Renderer {
 private:
@@ -68,18 +69,20 @@ private:
 	void setupQuad();
 
 	void setupSpheres();
-	void uploadSpheres(const std::vector<Sphere>& spheres);
 	void setupPlanes();
-	void uploadPlanes(const std::vector<Plane>& planes);
 
 	void createTexturesAndFBO(uint32_t width, uint32_t height);
 
 	void resetFrame();
+
 	void cleanup();
 
 public:
 	Renderer(uint32_t width, uint32_t height);
 	~Renderer();
+
+	void uploadSpheres(const std::vector<Sphere>& spheres);
+	void uploadPlanes(const std::vector<Plane>& planes);
 
 	GLuint getDisplayTexture() const;
 	uint32_t getFrame() const;
@@ -93,6 +96,8 @@ public:
 	void setSunColour(glm::vec3 colour);
 	void setSunIntensity(float intensity);
 	void setSunFocus(float focus);
+
+	void loadScene(const Scene& scene);
 
 	void onResize(uint32_t width, uint32_t height);
 	void render(const Camera& camera);
