@@ -92,10 +92,10 @@
       "normal": [ 0.0, 1.0, 0.0 ],
       "material": {
         "colour": [ 1.0, 1.0, 1.0 ],
+        "smoothness": 0.0,
         "emissionColour": [ 0.0, 0.0, 0.0 ],
         "emissionStrength": 0.0,
         "specularColour": [ 1.0, 1.0, 1.0 ],
-        "smoothness": 0.0,
         "specularProbability": 0.0,
         "flag": 1
       }

@@ -303,7 +303,7 @@ vec3 Trace(Ray ray, inout uint rngState) {
 		} else {
 			vec3 diffuseDir = normalize(hit.normal + RandomUnitVector(rngState));
 			if (dot(diffuseDir, hit.normal) < 0.0) diffuseDir = -diffuseDir;
-            ray.dir = diffuseDir;
+				ray.dir = diffuseDir;
 			rayColour *= material.colour;
 		}
 

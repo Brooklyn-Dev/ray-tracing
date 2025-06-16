@@ -1,0 +1,171 @@
+{
+  "name": "Cornell Box 1",
+  "tracing": {
+    "gamma": 2.2,
+    "maxBounces": 16,
+    "samplesPerPixel": 16
+  },
+  "camera": {
+    "position": [ 0.0, 0.0, 4.0 ],
+    "pitch": 0.0,
+    "yaw": -90.0
+  },
+  "environment": {
+    "skyboxPath": "",
+    "exposureEV": 0.0,
+    "sunPitch": 50.0,
+    "sunYaw": -30.0,
+    "sunColour": [ 1.0, 1.0, 0.9 ],
+    "sunIntensity": 0.0,
+    "sunFocus": 0.0
+  },
+  "quads": [
+    {
+      "position": [ 0.0, -2.0, 0.0 ],
+      "width": 4.0,
+      "normal": [ 0.0, 1.0, 0.0 ],
+      "height": 4.0,
+      "right": [ 1.0, 0.0, 0.0 ],
+      "up": [ 0.0, 0.0, -1.0 ],
+      "material": {
+        "colour": [ 0.9, 0.9, 0.9 ],
+        "emissionColour": [ 0.0, 0.0, 0.0 ],
+        "emissionStrength": 0.0,
+        "specularColour": [ 0.0, 0.0, 0.0 ],
+        "smoothness": 0.0,
+        "specularProbability": 0.0,
+        "flag": 0
+      }
+    },
+    {
+      "position": [ 0.0, 2.0, 0.0 ],
+      "width": 4.0,
+      "normal": [ 0.0, -1.0, 0.0 ],
+      "height": 4.0,
+      "right": [ 1.0, 0.0, 0.0 ],
+      "up": [ 0.0, 0.0, 1.0 ],
+      "material": {
+        "colour": [ 0.9, 0.9, 0.9 ],
+        "emissionColour": [ 0.0, 0.0, 0.0 ],
+        "emissionStrength": 0.0,
+        "specularColour": [ 0.0, 0.0, 0.0 ],
+        "smoothness": 0.0,
+        "specularProbability": 0.0,
+        "flag": 0
+      }
+    },
+    {
+      "position": [ 0.0, 0.0, -2.0 ],
+      "width": 4.0,
+      "normal": [ 0.0, 0.0, 1.0 ],
+      "height": 4.0,
+      "right": [ 1.0, 0.0, 0.0 ],
+      "up": [ 0.0, 1.0, 0.0 ],
+      "material": {
+        "colour": [ 0.9, 0.9, 0.9 ],
+        "emissionColour": [ 0.0, 0.0, 0.0 ],
+        "emissionStrength": 0.0,
+        "specularColour": [ 0.0, 0.0, 0.0 ],
+        "smoothness": 0.0,
+        "specularProbability": 0.0,
+        "flag": 0
+      }
+    },
+    {
+      "position": [ -2.0, 0.0, 0.0 ],
+      "width": 4.0,
+      "normal": [ 1.0, 0.0, 0.0 ],
+      "height": 4.0,
+      "right": [ 0.0, 0.0, -1.0 ],
+      "up": [ 0.0, 1.0, 0.0 ],
+      "material": {
+        "colour": [ 0.9, 0.1, 0.1 ],
+        "emissionColour": [ 0.0, 0.0, 0.0 ],
+        "emissionStrength": 0.0,
+        "specularColour": [ 0.0, 0.0, 0.0 ],
+        "smoothness": 0.0,
+        "specularProbability": 0.0,
+        "flag": 0
+      }
+    },
+    {
+      "position": [ 2.0, 0.0, 0.0 ],
+      "width": 4.0,
+      "normal": [ -1.0, 0.0, 0.0 ],
+      "height": 4.0,
+      "right": [ 0.0, 0.0, 1.0 ],
+      "up": [ 0.0, 1.0, 0.0 ],
+      "material": {
+        "colour": [ 0.1, 0.9, 0.1 ],
+        "emissionColour": [ 0.0, 0.0, 0.0 ],
+        "emissionStrength": 0.0,
+        "specularColour": [ 0.0, 0.0, 0.0 ],
+        "smoothness": 0.0,
+        "specularProbability": 0.0,
+        "flag": 0
+      }
+    },
+    {
+      "position": [ 0.0, 0.0, 2.0 ],
+      "width": 4.0,
+      "normal": [ 0.0, 0.0, -1.0 ],
+      "height": 4.0,
+      "right": [ 1.0, 0.0, 0.0 ],
+      "up": [ 0.0, 1.0, 0.0 ],
+      "material": {
+        "colour": [ 0.9, 0.9, 0.9 ],
+        "emissionColour": [ 0.0, 0.0, 0.0 ],
+        "emissionStrength": 0.0,
+        "specularColour": [ 0.0, 0.0, 0.0 ],
+        "smoothness": 0.0,
+        "specularProbability": 0.0,
+        "flag": 0
+      }
+    },
+    {
+      "position": [ 0.0, 1.99, 0.0 ],
+      "width": 1.5,
+      "normal": [ 0.0, -1.0, 0.0 ],
+      "height": 1.5,
+      "right": [ 1.0, 0.0, 0.0 ],
+      "up": [ 0.0, 0.0, 1.0 ],
+      "material": {
+        "colour": [ 0.0, 0.0, 0.0 ],
+        "emissionColour": [ 1.0, 1.0, 1.0 ],
+        "emissionStrength": 10.0,
+        "specularColour": [ 0.0, 0.0, 0.0 ],
+        "smoothness": 0.0,
+        "specularProbability": 0.0,
+        "flag": 0
+      }
+    }
+  ],
+  "spheres": [
+    {
+      "position": [ -0.7, -1.2, -0.2 ],
+      "radius": 0.8,
+      "material": {
+        "colour": [ 0.1, 0.2, 0.8 ],
+        "emissionColour": [ 0.0, 0.0, 0.0 ],
+        "emissionStrength": 0.0,
+        "specularColour": [ 0.8, 0.8, 0.8 ],
+        "smoothness": 0.6,
+        "specularProbability": 0.8,
+        "flag": 0
+      }
+    },
+    {
+      "position": [ 0.7, -1.5, 0.7 ],
+      "radius": 0.5,
+      "material": {
+        "colour": [ 0.0, 0.0, 0.0 ],
+        "emissionColour": [ 0.0, 0.0, 0.0 ],
+        "emissionStrength": 0.0,
+        "specularColour": [ 0.9, 0.9, 0.9 ],
+        "smoothness": 1.0,
+        "specularProbability": 1.0,
+        "flag": 0
+      }
+    }
+  ]
+}

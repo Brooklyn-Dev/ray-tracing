@@ -281,7 +281,7 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
             g_renderer->setGamma(g_gamma);
 
         ImGui::Text("Max Bounces:");
-        if (ImGui::SliderInt("##Max Bounces", &g_maxBounces, 1, 32))
+        if (ImGui::SliderInt("##Max Bounces", &g_maxBounces, 1, 64))
             g_renderer->setMaxBounces(g_maxBounces);
 
         ImGui::Text("Samples Per Pixel:");
@@ -416,7 +416,7 @@ int main() {
 
     setupRenderer(g_windowWidth, g_windowHeight);
 
-    loadScene("scenes/specular_1.json", window);
+    loadScene("scenes/default_scene.json", window);
 
     // Main app loop
     while (!glfwWindowShouldClose(window)) {
