@@ -140,8 +140,8 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     }
 }
 
-void loadScene(const std::string& filename, GLFWwindow* window) {
-    if (SceneLoader::loadScene(filename, g_scene)) {
+void loadScene(const std::string& filepath, GLFWwindow* window) {
+    if (SceneLoader::loadScene(filepath, g_scene)) {
         if (g_scene.name.size() > 0)
             glfwSetWindowTitle(window, ("Ray Tracer - " + g_scene.name).c_str());
         g_renderer->loadScene(g_scene);
@@ -248,6 +248,12 @@ void renderImGuiMenuBar(GLFWwindow* window) {
                 IGFD::FileDialogConfig config;
                 config.path = "./scenes";
                 ImGuiFileDialog::Instance()->OpenDialog("ChooseSceneFile", "Choose Scene", ".json", config);
+            }
+
+            if (ImGui::MenuItem("Export Render")) {
+                IGFD::FileDialogConfig config;
+                config.path = "./exports";
+                ImGuiFileDialog::Instance()->OpenDialog("ChooseExportFile", "Choose Export File", ".png", config);
             }
 
             if (ImGui::MenuItem("Exit", "Alt+F4"))
@@ -474,18 +480,27 @@ int main() {
 
         if (ImGuiFileDialog::Instance()->Display("ChooseSceneFile")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
-                std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+                std::string filepath = ImGuiFileDialog::Instance()->GetFilePathName();
                 if (g_renderer)
-                    loadScene(filePath, window);
+                    loadScene(filepath, window);
+            }
+            ImGuiFileDialog::Instance()->Close();
+        }
+
+        if (ImGuiFileDialog::Instance()->Display("ChooseExportFile")) {
+            if (ImGuiFileDialog::Instance()->IsOk()) {
+                std::string filepath = ImGuiFileDialog::Instance()->GetFilePathName();
+                if (g_renderer)
+                    g_renderer->saveRenderedImage(filepath, g_viewportWidth, g_viewportHeight);
             }
             ImGuiFileDialog::Instance()->Close();
         }
 
         if (ImGuiFileDialog::Instance()->Display("ChooseSkyboxFile")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
-                std::string filePath = ImGuiFileDialog::Instance()->GetFilePathName();
+                std::string filepath = ImGuiFileDialog::Instance()->GetFilePathName();
                 if (g_renderer)
-                    g_renderer->setSkybox(filePath);
+                    g_renderer->setSkybox(filepath);
             }   
             ImGuiFileDialog::Instance()->Close();
         }

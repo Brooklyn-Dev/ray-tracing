@@ -107,4 +107,6 @@ public:
 
 	void onResize(uint32_t width, uint32_t height);
 	void render(const Camera& camera);
+
+	void saveRenderedImage(const std::string& filepath, int textureWidth, int textureHeight);
 };

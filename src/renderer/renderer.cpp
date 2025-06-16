@@ -4,6 +4,9 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #include "camera/camera.hpp"
 #include "renderer/renderer.hpp"
 #include "scene/scene.hpp"
@@ -350,6 +353,40 @@ void Renderer::loadScene(const Scene& scene) {
     setSunFocus(scene.sunFocus);
 
     resetFrame();
+}
+
+void Renderer::saveRenderedImage(const std::string& filepath, int textureWidth, int textureHeight) {
+    if (m_displayTexture == 0 || textureWidth <= 0 || textureHeight <= 0) {
+        std::cerr << "Error: Invalid texture ID or dimensions for saving image." << std::endl;
+        return;
+    }
+
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_displayTexture, 0);
+
+    size_t bufferSize = static_cast<size_t>(textureWidth) * textureHeight * 4;
+    std::vector<unsigned char> pixels(bufferSize);
+
+    glReadPixels(0, 0, textureWidth, textureHeight, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &fbo);
+
+    std::vector<unsigned char> flippedPixels(bufferSize);
+    int rowSize = textureWidth * 4;
+
+    for (int y = 0; y < textureHeight; ++y) {
+        memcpy(&flippedPixels[y * rowSize], &pixels[(textureHeight - 1 - y) * rowSize], rowSize);
+    }
+
+    int result = stbi_write_png(filepath.c_str(), textureWidth, textureHeight, 4, flippedPixels.data(), rowSize);
+    if (result)
+        std::cout << "Image saved successfully to " << filepath << std::endl;
+    else
+        std::cerr << "Error: Failed to save image to " << filepath << std::endl;
 }
 
 void Renderer::resetFrame() {
