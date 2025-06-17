@@ -90,7 +90,14 @@ struct HitInfo {
 	vec3 hitPoint;
 	vec3 normal;
 	Material material;
+	int hitType;
+	vec2 uv;
 };
+
+const int HIT_TYPE_NONE = 0;
+const int HIT_TYPE_SPHERE = 1;
+const int HIT_TYPE_PLANE = 2;
+const int HIT_TYPE_QUAD = 3;
 
 layout(std430, binding = 0) readonly buffer Spheres { Sphere spheres[]; };
 layout(std430, binding = 1) readonly buffer Planes { Plane planes[]; };
@@ -100,7 +107,6 @@ uniform int uNumSpheres;
 uniform int uNumPlanes;
 uniform int uNumQuads;
 
-// === SKYBOX ===
 vec2 calculateEquirectangularUV(vec3 dir) {
 	dir = normalize(dir);
 
@@ -153,6 +159,7 @@ HitInfo RaySphereIntersect(Ray ray, Sphere sphere) {
 	HitInfo hit;
     hit.hit = false;
     hit.dst = 1e20;
+	hit.hitType = HIT_TYPE_NONE;
 
 	vec3 oc = ray.origin - sphere.position;
 	float a = dot(ray.dir, ray.dir);
@@ -166,6 +173,7 @@ HitInfo RaySphereIntersect(Ray ray, Sphere sphere) {
 		hit.hitPoint = ray.origin + ray.dir * hit.dst;
 		hit.normal = normalize(hit.hitPoint - sphere.position);
 		hit.material = sphere.material;
+		hit.hitType = HIT_TYPE_SPHERE;
 	}
 
 	return hit;
@@ -175,6 +183,7 @@ HitInfo RayPlaneIntersect(Ray ray, Plane plane) {
 	HitInfo hit;
     hit.hit = false;
     hit.dst = 1e20;
+	hit.hitType = HIT_TYPE_NONE;
 
 	float denominator = dot(plane.normal, ray.dir);
 	if (denominator < 0.0) {
@@ -183,6 +192,7 @@ HitInfo RayPlaneIntersect(Ray ray, Plane plane) {
 		hit.hitPoint = ray.origin + ray.dir * hit.dst;
 		hit.normal = plane.normal;
 		hit.material = plane.material;
+		hit.hitType = HIT_TYPE_PLANE;
 	}
 
 	return hit;
@@ -192,6 +202,7 @@ HitInfo RayQuadIntersect(Ray ray, Quad quad) {
 	HitInfo hit;
     hit.hit = false;
     hit.dst = 1e20;
+	hit.hitType = HIT_TYPE_NONE;
 
 	float denominator = dot(quad.normal, ray.dir);
 	if (denominator < 0.0) {
@@ -200,6 +211,7 @@ HitInfo RayQuadIntersect(Ray ray, Quad quad) {
 		hit.hitPoint = ray.origin + ray.dir * hit.dst;
 		hit.normal = quad.normal;
 		hit.material = quad.material;
+		hit.hitType = HIT_TYPE_QUAD;
 
 		vec3 localHitPoint =  hit.hitPoint - quad.position;
 
@@ -238,6 +250,9 @@ HitInfo CalculateRayCollision(Ray ray) {
 		if (currentHit.hit && currentHit.dst > 0.0 && currentHit.dst < closestHit.dst)
 			closestHit = currentHit;	
 	}
+
+	if (closestHit.hitType == HIT_TYPE_SPHERE && closestHit.material.flag != 0)
+		closestHit.uv = calculateEquirectangularUV(closestHit.normal);
 
 	return closestHit;
 }
@@ -282,6 +297,11 @@ vec3 Trace(Ray ray, inout uint rngState) {
 			float x = hit.hitPoint.x;
 			float z = hit.hitPoint.z;
 
+			if (hit.uv != vec2(0.0)) {
+				x = hit.uv.x * 20.0;
+				z = hit.uv.y * 10.0;
+			}
+
 			int ix = int(floor(x));
 			int iz = int(floor(z));
 
@@ -293,7 +313,7 @@ vec3 Trace(Ray ray, inout uint rngState) {
 		incomingLight += material.emissionColour * material.emissionStrength * rayColour;
 
 		// Calculate next ray
-		ray.origin = hit.hitPoint + hit.normal * 0.0001;
+		ray.origin = hit.hitPoint;
 
 		bool isSpecular = material.specularProbability >= RandomValue(rngState);
 		if (isSpecular) {
