@@ -145,3 +145,18 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E make_directory
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/exports
 )
+
+# Copy README.md to output directory
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/README.md"
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/README.md
+)
+
+# Copy docs to output directory
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/docs
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/docs
+)
