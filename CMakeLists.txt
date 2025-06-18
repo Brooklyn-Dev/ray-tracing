@@ -74,7 +74,16 @@ target_link_libraries(ImGuiFileDialog PUBLIC
 
 # Create main executable
 file(GLOB_RECURSE SOURCES src/*.cpp)
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${APP_TYPE} ${SOURCES})
+
+if (WIN32 AND MSVC)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        WIN32_EXECUTABLE "$<$<CONFIG:Release>:TRUE>$<$<CONFIG:Debug>:FALSE>"
+    )
+    target_link_options(${PROJECT_NAME} PRIVATE
+        "$<$<CONFIG:Release>:/ENTRY:mainCRTStartup>"
+    )
+endif()
 
 # Link libraries
 target_link_libraries(${PROJECT_NAME} 
