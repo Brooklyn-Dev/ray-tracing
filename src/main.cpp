@@ -21,6 +21,8 @@
 #include "scene\scene_loader.hpp"
 
 // === GLOBALS ===
+const std::string WINDOW_TITLE = "Ray Tracer v1.0.0";
+
 // Window and Rendering State
 uint32_t g_windowWidth = 1200;
 uint32_t g_windowHeight = 900;
@@ -143,7 +145,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
 void loadScene(const std::string& filepath, GLFWwindow* window) {
     if (SceneLoader::loadScene(filepath, g_scene)) {
         if (g_scene.name.size() > 0)
-            glfwSetWindowTitle(window, ("Ray Tracer - " + g_scene.name).c_str());
+            glfwSetWindowTitle(window, (WINDOW_TITLE + " - " + g_scene.name).c_str());
         g_renderer->loadScene(g_scene);
     }
 }
@@ -172,7 +174,7 @@ void initGLFW() {
 }
 
 GLFWwindow* createGLFWWindow() {
-    GLFWwindow* window = glfwCreateWindow(g_windowWidth, g_windowHeight, "Ray Tracer", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(g_windowWidth, g_windowHeight, WINDOW_TITLE.c_str(), nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -283,7 +285,7 @@ void renderImGuiSettingsWindow(ImGuiIO& io) {
         ImGui::PushItemWidth(-1); // Sliders fill available width
 
         ImGui::Text("Gamma:");
-        if (ImGui::SliderFloat("##Gamma", &g_gamma, 1.8, 2.8, "%.2f"))
+        if (ImGui::SliderFloat("##Gamma", &g_gamma, 1.8f, 2.8f, "%.2f"))
             g_renderer->setGamma(g_gamma);
 
         ImGui::Text("Max Bounces:");

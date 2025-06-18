@@ -26,7 +26,7 @@ private:
 	uint32_t m_width;
 	uint32_t m_height;
 
-	float m_gamma = 2.2;
+	float m_gamma = 2.2f;
 	uint32_t m_maxBounces = 2;
 	uint32_t m_samplesPerPixel = 1;
 	uint32_t m_frame = 1;
