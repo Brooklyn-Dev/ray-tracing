@@ -21,7 +21,8 @@
 #include "scene\scene_loader.hpp"
 
 // === GLOBALS ===
-const std::string WINDOW_TITLE = "Ray Tracer v1.0.0";
+const std::string WINDOW_TITLE = "Ray Tracer v1.0.1";
+const ImVec2 MIN_DIALOG_SIZE = ImVec2(700, 500);
 
 // Window and Rendering State
 uint32_t g_windowWidth = 1200;
@@ -480,7 +481,7 @@ int main() {
         renderImGuiSettingsWindow(io);
         renderImGuiViewportWindow();
 
-        if (ImGuiFileDialog::Instance()->Display("ChooseSceneFile")) {
+        if (ImGuiFileDialog::Instance()->Display("ChooseSceneFile", ImGuiWindowFlags_NoCollapse, MIN_DIALOG_SIZE)) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
                 std::string filepath = ImGuiFileDialog::Instance()->GetFilePathName();
                 if (g_renderer)
@@ -489,7 +490,7 @@ int main() {
             ImGuiFileDialog::Instance()->Close();
         }
 
-        if (ImGuiFileDialog::Instance()->Display("ChooseExportFile")) {
+        if (ImGuiFileDialog::Instance()->Display("ChooseExportFile", ImGuiWindowFlags_NoCollapse, MIN_DIALOG_SIZE)) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
                 std::string filepath = ImGuiFileDialog::Instance()->GetFilePathName();
                 if (g_renderer)
@@ -498,7 +499,7 @@ int main() {
             ImGuiFileDialog::Instance()->Close();
         }
 
-        if (ImGuiFileDialog::Instance()->Display("ChooseSkyboxFile")) {
+        if (ImGuiFileDialog::Instance()->Display("ChooseSkyboxFile", ImGuiWindowFlags_NoCollapse, MIN_DIALOG_SIZE)) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
                 std::string filepath = ImGuiFileDialog::Instance()->GetFilePathName();
                 if (g_renderer)
