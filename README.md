@@ -6,13 +6,20 @@
 ![C++](https://img.shields.io/badge/C%2B%2B-17%2B-blue?style=flat&logo=c%2B%2B&logoColor=white)
 ![OpenGL](https://img.shields.io/badge/OpenGL-4.4%2B-5777A6?style=flat&logo=opengl&logoColor=white)
 
-A GPU-accelerated, physically-based path tracer built with C++ and OpenGL - from scratch.
-
+<table>
+<tr>
+<td style="vertical-align: top; max-width: 550px;">
+A GPU-accelerated, physically-based path tracer built with C++ and OpenGL — from scratch.
+<br><br>
 This was a project I made over two weeks. I've always thought ray tracers look cool and wanted to try creating one from scratch.
-
-Made as a submission to [The Bay](https://shipwrecked.hackclub.com/info/the-bay), an online, project-based, summer coding event by Hack Club.
-
-Devlog to be released soon: [Brooklyn-Dev](https://www.youtube.com/@BrooklynBaylis).
+</td>
+<td>
+    <a href="https://shipwrecked.hackclub.com/?t=ghrm" target="_blank">
+        <img src="https://hc-cdn.hel1.your-objectstorage.com/s/v3/739361f1d440b17fc9e2f74e49fc185d86cbec14_badge.png" alt="Shipwrecked badge" style="max-width: 250px;">
+    </a>
+</td>
+</tr>
+</table>
 
 <img src="docs/image.png" width="800" alt="Full view of program, showcasing UI"/>
 
